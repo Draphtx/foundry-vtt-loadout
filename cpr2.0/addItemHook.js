@@ -1,4 +1,5 @@
 // Currently only working for a test scene with a single rectangular tile
+// Currently only working for square tiles < 3 units
 // Lots of this will be refactored to support arrays returned by filters
 const testScene = game.scenes.getName("TileTest")
 const gridSize = testScene.grid.size
@@ -32,13 +33,23 @@ console.log(tilePositions)
 // Find any tokens that may already be over the tile's area
 let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
 
-// Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens
-// At least a few edge-cases happen here, specifically with differently-sized objects interacting. False-positives are most common.
+// Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
+// There is something going on here with the use of the myItemSize * gridSize that makes me have to do this extra step of determining 
+// which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
 for(let blockingToken of blockingTokens){
-    tilePositions = tilePositions.filter(p => 
-        p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + myItemSizeX * gridSize) || blockingToken.x >= p.x2 || 
-        p.y1 >= Math.max(blockingToken.y + blockingToken.h, blockingToken.y + myItemSizeY * gridSize) || blockingToken.y >= p.y2
-        )
+    // If the blockingToken is >= the new item, the item should use the filter but with Math.max
+    if(blockingToken.w >= myItemSizeX * gridSize || blockingToken.h > myItemSizeY * gridSize){
+        tilePositions = tilePositions.filter(p => 
+            p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + myItemSizeX * gridSize) || blockingToken.x >= p.x2 || 
+            p.y1 >= Math.max(blockingToken.y + blockingToken.h, blockingToken.y + myItemSizeY * gridSize) || blockingToken.y >= p.y2
+            )
+    // If the blockingToken is < the new item, the item should use the filter but with Math.min
+    } else {
+        tilePositions = tilePositions.filter(p => 
+            p.x1 >= Math.min(blockingToken.x + blockingToken.w, blockingToken.x + myItemSizeX * gridSize) || blockingToken.x >= p.x2 || 
+            p.y1 >= Math.min(blockingToken.y + blockingToken.h, blockingToken.y + myItemSizeY * gridSize) || blockingToken.y >= p.y2
+            )
+    }
 }
 console.log(tilePositions)
 
