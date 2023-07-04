@@ -33,7 +33,7 @@ console.log(tilePositions)
 let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
 
 // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens
-// At least a few edge-cases happen here, specifically with differently-sized objects interacting. False-negatives are most common.
+// At least a few edge-cases happen here, specifically with differently-sized objects interacting. False-positives are most common.
 for(let blockingToken of blockingTokens){
     tilePositions = tilePositions.filter(p => 
         p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + myItemSizeX * gridSize) || blockingToken.x >= p.x2 || 
