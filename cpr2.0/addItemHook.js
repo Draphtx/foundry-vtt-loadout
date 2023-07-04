@@ -25,22 +25,6 @@ for(let rowNum of Array(testTile.height/gridSize).keys()){
 }
 console.log(tilePositions)
 
-/*
-// Process column positions
-var rotatedTilePositions = [];
-for(let colNum of Array(testTile.width/gridSize).keys()){
-    console.log("processing column " + colNum)
-    for(let rowNum of Array(testTile.height/(myItemSizeX*gridSize)).keys()){
-        let tilePosition = {"x": testTile.x + (rowNum * gridSize), "y": testTile.y + (colNum * gridSize)}
-        rotatedTilePositions.push(tilePosition)
-    }
-}
-
-const positionSet = new Set(tilePositions)
-//console.log(tilePositions)
-//console.log(rotatedTilePositions)
-console.log(positionSet)
-*/
 
 // Find any tokens that may already be over the tile's area
 let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
