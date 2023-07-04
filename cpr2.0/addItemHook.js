@@ -66,4 +66,4 @@ const itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dr
 const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
 
 
-console.log(filteredTilePositions2)
+console.log(filteredTilePositions)
