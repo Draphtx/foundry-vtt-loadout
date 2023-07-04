@@ -54,6 +54,7 @@ let blockingTokenY2 = blockingTokens[0].y + blockingTokens[0].h
 // Filter potential itemPositions by removing those that are already covered by other tokens
 console.log(blockingTokens[0])
 // TODO: MAKE WORK
-filteredTilePositions = tilePositions.filter(p => p.x2 <= blockingTokenX1)
+filteredTilePositions = tilePositions.filter(p => p.x1 >= blockingTokenX2 || blockingTokenX1 >= p.x2)
+filteredTilePositions2 = filteredTilePositions.filter(p => p.y1 >= blockingTokenY2 || blockingTokenY1 >= p.y2)
 
-console.log(filteredTilePositions)
+console.log(filteredTilePositions2)
