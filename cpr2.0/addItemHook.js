@@ -48,19 +48,22 @@ console.log(positionSet)
 // Find any tokens that may already be over the tile's area
 let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
 
+for(let blockingToken of blockingTokens){
+    tilePositions = tilePositions.filter(p => p.x1 >= blockingToken.x + blockingToken.w || blockingToken.x >= p.x2 || p.y1 >= blockingToken.y + blockingToken.height || blockingToken.y >= p.y2)
+}
 // Convenience during testing; get the upper left and lower-right corners of a single token
-let blockingTokenX1 = blockingTokens[0].x
-let blockingTokenY1 = blockingTokens[0].y
-let blockingTokenX2 = blockingTokens[0].x + blockingTokens[0].w
-let blockingTokenY2 = blockingTokens[0].y + blockingTokens[0].h
 
+console.log(tilePositions)
 // Filter potential itemPositions by removing those that are already covered by other tokens
-filteredTilePositions = tilePositions.filter(p => p.x1 >= blockingTokenX2 || blockingTokenX1 >= p.x2 || p.y1 >= blockingTokenY2 || blockingTokenY1 >= p.y2)
+if(! tilePositions.length){
+    ui.notifications.warn("unable to find space for token");
+    return;
+}
 
 // Choose an available slot and drop a test token
 //// Someday we should sort this but in the current iteration the earlier indexes are all the 
 //// furthest-upper-left, which is what I want anyway.
-let dropPosition = filteredTilePositions[0]
+let dropPosition = tilePositions[0]
 let itemActor = game.actors.getName("DMTest")
 const itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: myItemSizeX, height: myItemSizeY})
 const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
