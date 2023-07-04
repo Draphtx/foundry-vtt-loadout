@@ -25,9 +25,6 @@ for(let rowNum of Array(testTile.height/gridSize).keys()){
 }
 console.log(tilePositions)
 
-
-
-
 /*
 // Process column positions
 var rotatedTilePositions = [];
@@ -49,16 +46,25 @@ console.log(positionSet)
 let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
 
 for(let blockingToken of blockingTokens){
-    tilePositions = tilePositions.filter(p => p.x1 >= blockingToken.x + blockingToken.w || blockingToken.x >= p.x2 || p.y1 >= blockingToken.y + blockingToken.height || blockingToken.y >= p.y2)
+    tilePositions = tilePositions.filter(p => 
+        p.x1 >= Math.max(blockingToken.x + blockingToken.width, blockingToken.x + myItemSizeX * gridSize) || blockingToken.x >= p.x2 || 
+        p.y1 >= Math.max(blockingToken.y + blockingToken.height, blockingToken.y + myItemSizeY * gridSize) || blockingToken.y >= p.y2
+        )
 }
-// Convenience during testing; get the upper left and lower-right corners of a single token
 
 console.log(tilePositions)
 // Filter potential itemPositions by removing those that are already covered by other tokens
+
 if(! tilePositions.length){
     ui.notifications.warn("unable to find space for token");
     return;
 }
+
+/*
+for(let blockingToken of blockingTokens){
+    tilePositions = tilePositions.filter(p => p.x1 >= Math.max((blockingToken.x + blockingToken.w), (blockingToken.x + myItemSizeX * gridSize)) || blockingToken.x >= p.x2 || p.y1 >= Math.max((blockingToken.y + blockingToken.height), (blockingToken.y + myItemSizeY * gridSize)) || blockingToken.y >= p.y2)
+}
+*/
 
 // Choose an available slot and drop a test token
 //// Someday we should sort this but in the current iteration the earlier indexes are all the 
@@ -66,7 +72,7 @@ if(! tilePositions.length){
 let dropPosition = tilePositions[0]
 let itemActor = game.actors.getName("DMTest")
 const itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: myItemSizeX, height: myItemSizeY})
-const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
 
 
 console.log(filteredTilePositions)
