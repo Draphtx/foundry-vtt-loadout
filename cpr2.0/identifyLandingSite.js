@@ -28,3 +28,12 @@ What we want to do here is:
 
   // We will use flags to store tile names, weights, and owners
   canvas.tiles.controlled[0].document.update({"flags.loadout": {"owner": "2c3FBQlOdTjaDNp9", "weight": 0, "state": "equipped"}})
+
+  // How to rotate our token
+  canvas.tokens.controlled[0].document.update({rotation: 270})
+
+  // This is how we can create a rotated Assault Rifle that is properly scaled.
+  // The scale values will always be the item width
+let itemActor = game.actors.getName("Assault Rifle")
+const itemTokenDoc = await itemActor.getTokenDocument({x: 0, y: 0, rotation: 90, width: 3, height: 1, texture: {scaleX: 4, scaleY: 4}})
+const addedToken = await game.scenes.current.createEmbeddedDocuments("Token", [itemTokenDoc])
