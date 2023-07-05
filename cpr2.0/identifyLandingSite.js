@@ -25,3 +25,6 @@ What we want to do here is:
 
 // Find token locations within a tile's coordinates
  game.canvas.tokens.objects.children.filter(t => t.x > 500 && t.x < 800)
+
+  // We will use flags to store tile names, weights, and owners
+  canvas.tiles.controlled[0].document.update({"flags.loadout": {"owner": "2c3FBQlOdTjaDNp9", "weight": 0, "state": "equipped"}})
