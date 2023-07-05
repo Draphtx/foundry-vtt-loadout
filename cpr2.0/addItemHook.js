@@ -4,9 +4,14 @@
 const testScene = game.scenes.getName("TileTest")
 const gridSize = testScene.grid.size
 
+// Start testing using some random items
+cprWeapons = ["Combat Knife", "Assault Rifle", "Grenade (Incendiary)", "Sword", "Baseball Bat", "Medium Pistol"]
+randomWeapon = cprWeapons[Math.floor(Math.random()*cprWeapons.length)]
+selectedWeapon = game.actors.getName(randomWeapon)
+
 // Test item size in grid units, not pixels
-let itemSizeX = 1
-let itemSizeY = 3
+let itemSizeX = selectedWeapon.prototypeToken.width
+let itemSizeY = selectedWeapon.prototypeToken.height
 let itemRotated = false
 
 // Start by filtering out any tiles that are too small contain the object (in either orientation) regardless of other considerations
@@ -63,7 +68,7 @@ if((! tilePositions.length) && (itemSizeX != itemSizeY)){
 }
 
 if(! tilePositions.length){
-    ui.notifications.warn("unable to find space for token");
+    ui.notifications.warn("unable to find space for " + selectedWeapon.prototypeToken.name + " token in (" + itemSizeX + "," + itemSizeY + ") or (" + itemSizeY + "," + itemSizeX + ")");
     return;
 }
 
@@ -71,7 +76,7 @@ if(! tilePositions.length){
 //// Someday we should sort this but in the current iteration the earlier indexes are all the 
 //// furthest-upper-left, which is what I want anyway.
 let dropPosition = tilePositions[0]
-let itemActor = game.actors.getName("Sword")
+let itemActor = game.actors.getName(selectedWeapon.prototypeToken.name)
 var itemTokenDoc
 console.log(itemRotated)
 if(itemRotated == true){
