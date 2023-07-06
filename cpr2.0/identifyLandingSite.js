@@ -38,6 +38,8 @@ let itemActor = game.actors.getName("Assault Rifle")
 const itemTokenDoc = await itemActor.getTokenDocument({x: 0, y: 0, rotation: 90, width: 3, height: 1, texture: {scaleX: 4, scaleY: 4}})
 const addedToken = await game.scenes.current.createEmbeddedDocuments("Token", [itemTokenDoc])
 
+//
+//
 // Full script for looking for player tokens by ownership, applicability, and weight
 const playerId = "2c3FBQlOdTjaDNp9"
 const testScene = game.scenes.getName("TileTest")
@@ -59,7 +61,7 @@ loadoutTiles = testScene.tiles.filter(tile => tile.flags.loadout)
 // filter loadout tiles to those owner by the character and those large enough to accommodate the item
 const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == playerId)
 
-// lambda to sort player's loadout tiles by weight (preference) 1-5
+// lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
 const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 
 console.log("Tiles that will fit item " + randomWeapon)

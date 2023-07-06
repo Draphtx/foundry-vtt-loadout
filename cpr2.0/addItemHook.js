@@ -3,6 +3,7 @@
 // Lots of this will be refactored to support arrays returned by filters
 const testScene = game.scenes.getName("TileTest")
 const gridSize = testScene.grid.size
+const playerId = "2c3FBQlOdTjaDNp9"
 
 // Start testing using some random items
 cprWeapons = ["Combat Knife", "Assault Rifle", "Grenade (Incendiary)", "Sword", "Baseball Bat", "Medium Pistol"]
@@ -14,27 +15,50 @@ let itemSizeX = selectedWeapon.prototypeToken.width
 let itemSizeY = selectedWeapon.prototypeToken.height
 let itemRotated = false
 
-// Start by filtering out any tiles that are too small contain the object (in either orientation) regardless of other considerations
-const applicableTiles = game.scenes.getName("TileTest").tiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY))
+// Get all loadout tiles from the loadout scene
+loadoutTiles = testScene.tiles.filter(tile => tile.flags.loadout)
 
-// TODO: Replace with iterator
-let testTile = applicableTiles[0]
+// filter loadout tiles to those owner by the character and those large enough to accommodate the item
+const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == playerId)
+
+// lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
+const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+
+// process each tile
+var tilePositions = [];
+for(const loadoutTile of sortedTiles){
+    console.log("checking tile " + loadoutTile.id)
+    tilePositions = getTilePositions(loadoutTile, itemSizeX, itemSizeY)
+
+    if(! tilePositions.length){
+        if(itemSizeX != itemSizeY){
+            tilePositions = getTilePositions(loadoutTile, itemSizeY, itemSizeX)
+            if(tilePositions.length){
+                itemRotated = true
+            }
+        }
+    }
+    if(tilePositions.length){
+        break;
+    }
+};
 
 // Get an array of possible positions for the item to land if nothing was blocking its space
-function getTilePositions(itemSizeL, itemSizeH){
-    for(let rowNum of Array(testTile.height/gridSize).keys()){
-        for(let colNum of Array(testTile.width/gridSize).keys()){
+function getTilePositions(loadoutTile, itemSizeL, itemSizeH){
+    let itemPositions = []
+    for(let rowNum of Array(loadoutTile.height/gridSize).keys()){
+        for(let colNum of Array(loadoutTile.width/gridSize).keys()){
             let tilePosition = {
-                "x1": testTile.x + (colNum * gridSize), "y1": testTile.y + (rowNum * gridSize), 
-                "x2": testTile.x + (colNum * gridSize) + (itemSizeL * gridSize), "y2": testTile.y + (rowNum * gridSize) + (itemSizeH * gridSize),
+                "x1": loadoutTile.x + (colNum * gridSize), "y1": loadoutTile.y + (rowNum * gridSize), 
+                "x2": loadoutTile.x + (colNum * gridSize) + (itemSizeL * gridSize), "y2": loadoutTile.y + (rowNum * gridSize) + (itemSizeH * gridSize),
             }
-            if((tilePosition.x1 + (itemSizeL * gridSize) <= testTile.x + testTile.width) && (tilePosition.y1 + (itemSizeH * gridSize) <= testTile.y + testTile.height)){
-                tilePositions.push(tilePosition)
+            if((tilePosition.x1 + (itemSizeL * gridSize) <= loadoutTile.x + loadoutTile.width) && (tilePosition.y1 + (itemSizeH * gridSize) <= loadoutTile.y + loadoutTile.height)){
+                itemPositions.push(tilePosition)
             }
         }
     }
     // Find any tokens that may already be over the tile's area
-    let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= testTile.x <= (testTile.x + testTile.width) && t.y >= testTile.y <=(testTile.y + testTile.height))
+    let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= loadoutTile.x <= (loadoutTile.x + loadoutTile.width) && t.y >= loadoutTile.y <=(loadoutTile.y + loadoutTile.height))
 
     // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
     // There is something going on here with the use of the myItemSize * gridSize that makes me have to do this extra step of determining 
@@ -42,29 +66,19 @@ function getTilePositions(itemSizeL, itemSizeH){
     for(let blockingToken of blockingTokens){
             // If the blockingToken is >= the new item, the item should use the filter but with Math.max
         if(blockingToken.w >= itemSizeL * gridSize || blockingToken.h > itemSizeH * gridSize){
-            tilePositions = tilePositions.filter(p => 
+            itemPositions = itemPositions.filter(p => 
                 p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * gridSize) || blockingToken.x >= p.x2 || 
                 p.y1 >= Math.max(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * gridSize) || blockingToken.y >= p.y2
                 )
         // If the blockingToken is < the new item, the item should use the filter but with Math.min
         } else {
-            tilePositions = tilePositions.filter(p => 
+            itemPositions = itemPositions.filter(p => 
                 p.x1 >= Math.min(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * gridSize) || blockingToken.x >= p.x2 || 
                 p.y1 >= Math.min(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * gridSize) || blockingToken.y >= p.y2
                 )
         }
     }
-    return tilePositions;
-}
-var tilePositions = [];
-tilePositions = getTilePositions(itemSizeX, itemSizeY)
-
-if((! tilePositions.length) && (itemSizeX != itemSizeY)){
-    console.log("analyzing rotated positons")
-    tilePositions = getTilePositions(itemSizeY, itemSizeX)
-    if(tilePositions.length){
-        itemRotated = true
-    }
+    return itemPositions;
 }
 
 if(! tilePositions.length){
