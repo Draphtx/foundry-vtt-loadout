@@ -6,7 +6,18 @@ const gridSize = testScene.grid.size
 const playerId = "2c3FBQlOdTjaDNp9"
 
 // Start testing using some random items
-cprWeapons = ["Combat Knife", "Assault Rifle", "Grenade (Incendiary)", "Sword", "Baseball Bat", "Medium Pistol"]
+cprWeapons = [
+    "Combat Knife", 
+    "Assault Rifle", 
+    "Grenade (Incendiary)", 
+    "Sword", 
+    "Baseball Bat", 
+    "Medium Pistol",
+    "Crossbow",
+    "SMG",
+    "Chainsaw",
+    "Lead Pipe",
+    "Dartgun"]
 randomWeapon = cprWeapons[Math.floor(Math.random()*cprWeapons.length)]
 selectedWeapon = game.actors.getName(randomWeapon)
 
@@ -24,6 +35,7 @@ const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSiz
 // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
 const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 
+// EVERYTHING FROM HERE DOWN NEEDS A HUGE REFACTOR & CLEANUP
 // process each tile
 var tilePositions = [];
 for(const loadoutTile of sortedTiles){
@@ -45,6 +57,7 @@ for(const loadoutTile of sortedTiles){
 
 // Get an array of possible positions for the item to land if nothing was blocking its space
 function getTilePositions(loadoutTile, itemSizeL, itemSizeH){
+    // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
     let itemPositions = []
     for(let rowNum of Array(loadoutTile.height/gridSize).keys()){
         for(let colNum of Array(loadoutTile.width/gridSize).keys()){
