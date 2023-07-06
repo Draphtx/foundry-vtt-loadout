@@ -37,3 +37,30 @@ What we want to do here is:
 let itemActor = game.actors.getName("Assault Rifle")
 const itemTokenDoc = await itemActor.getTokenDocument({x: 0, y: 0, rotation: 90, width: 3, height: 1, texture: {scaleX: 4, scaleY: 4}})
 const addedToken = await game.scenes.current.createEmbeddedDocuments("Token", [itemTokenDoc])
+
+// Full script for looking for player tokens by ownership, applicability, and weight
+const playerId = "2c3FBQlOdTjaDNp9"
+const testScene = game.scenes.getName("TileTest")
+const gridSize = testScene.grid.size
+
+// Start testing using some random items
+cprWeapons = ["Combat Knife", "Assault Rifle", "Grenade (Incendiary)", "Sword", "Baseball Bat", "Medium Pistol"]
+randomWeapon = cprWeapons[Math.floor(Math.random()*cprWeapons.length)]
+selectedWeapon = game.actors.getName(randomWeapon)
+
+// Test item size in grid units, not pixels
+let itemSizeX = selectedWeapon.prototypeToken.width
+let itemSizeY = selectedWeapon.prototypeToken.height
+let itemRotated = false
+
+// Get all loadout tiles from the loadout scene
+loadoutTiles = testScene.tiles.filter(tile => tile.flags.loadout)
+
+// filter loadout tiles to those owner by the character and those large enough to accommodate the item
+const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == playerId)
+
+// lambda to sort player's loadout tiles by weight (preference) 1-5
+const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+
+console.log("Tiles that will fit item " + randomWeapon)
+console.log(sortedTiles)
