@@ -113,7 +113,7 @@ if(itemRotated == true){
     console.log("creating rotated token")
     itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeY, height: itemSizeX, rotation: 90, texture: {scaleX: itemSizeY, scaleY: itemSizeY}})
 } else {
-    itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, texture: {scaleX: itemSizeX, scaleY: itemSizeX}})
+    itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY})
 }
 const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
 if(selectedTile.flags.loadout.state == "owned"){
