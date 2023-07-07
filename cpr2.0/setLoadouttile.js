@@ -19,11 +19,21 @@ const loadoutTileDialog = new Dialog({
         </select>
       </div>
       <div class="form-group">
+        <label for="typeSelect">Storage Type</label>
+        <select name="stateSelect">
+          <option value="holster">Holster</option>
+          <option value="pocket">Pocket</option>
+          <option value="back/shoulder">Back/Shoulder</option>
+          <option value="luggage">Luggage</option>
+          <option value="stash">Stash</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label for="stateSelect">Equipped State</label>
         <select name="stateSelect">
-          <option value="equipped">Equipped</option>
           <option value="carried">Carried</option>
           <option value="owned">Owned</option>
+          <option value="equipped">Equipped</option>
         </select>
       </div>`,
       buttons: {
@@ -36,18 +46,19 @@ const loadoutTileDialog = new Dialog({
       close: html => {
         let characterName = html.find('[name="characterName"]').val();
         let tileWeight = html.find('[name="weightSelect"]').val();
+        let storageType = html.find('[name="typeSelect"]').val();
         let tileState = html.find('[name="stateSelect"]').val();
-        setupLoadoutTiles(characterName, tileWeight, tileState)
+        setupLoadoutTiles(characterName, tileWeight, storageType, tileState)
       }
-
 
 }).render(true);
 
-async function setupLoadoutTiles(characterName, tileWeight, tileState){
+async function setupLoadoutTiles(characterName, tileWeight, storageType, tileState){
     canvas.tiles.controlled.forEach(tile => tile.document.update({
         "flags.loadout": {
             "owner": game.actors.getName(characterName).id,
             "weight": tileWeight,
+            "type": storageType,
             "state": tileState
         }
     }))
