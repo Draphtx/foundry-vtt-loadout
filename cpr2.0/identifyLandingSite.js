@@ -25,3 +25,44 @@ What we want to do here is:
 
 // Find token locations within a tile's coordinates
  game.canvas.tokens.objects.children.filter(t => t.x > 500 && t.x < 800)
+
+  // We will use flags to store tile names, weights, and owners
+  canvas.tiles.controlled[0].document.update({"flags.loadout": {"owner": "2c3FBQlOdTjaDNp9", "weight": 0, "state": "equipped"}})
+
+  // How to rotate our token
+  canvas.tokens.controlled[0].document.update({rotation: 270})
+
+  // This is how we can create a rotated Assault Rifle that is properly scaled.
+  // The scale values will always be the item width
+let itemActor = game.actors.getName("Assault Rifle")
+const itemTokenDoc = await itemActor.getTokenDocument({x: 0, y: 0, rotation: 90, width: 3, height: 1, texture: {scaleX: 4, scaleY: 4}})
+const addedToken = await game.scenes.current.createEmbeddedDocuments("Token", [itemTokenDoc])
+
+//
+//
+// Full script for looking for player tokens by ownership, applicability, and weight
+const playerId = "2c3FBQlOdTjaDNp9"
+const testScene = game.scenes.getName("TileTest")
+const gridSize = testScene.grid.size
+
+// Start testing using some random items
+cprWeapons = ["Combat Knife", "Assault Rifle", "Grenade (Incendiary)", "Sword", "Baseball Bat", "Medium Pistol"]
+randomWeapon = cprWeapons[Math.floor(Math.random()*cprWeapons.length)]
+selectedWeapon = game.actors.getName(randomWeapon)
+
+// Test item size in grid units, not pixels
+let itemSizeX = selectedWeapon.prototypeToken.width
+let itemSizeY = selectedWeapon.prototypeToken.height
+let itemRotated = false
+
+// Get all loadout tiles from the loadout scene
+loadoutTiles = testScene.tiles.filter(tile => tile.flags.loadout)
+
+// filter loadout tiles to those owner by the character and those large enough to accommodate the item
+const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == playerId)
+
+// lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
+const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+
+console.log("Tiles that will fit item " + randomWeapon)
+console.log(sortedTiles)
