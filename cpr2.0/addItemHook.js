@@ -38,6 +38,7 @@ const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.fl
 // EVERYTHING FROM HERE DOWN NEEDS A HUGE REFACTOR & CLEANUP
 // process each tile
 var tilePositions = [];
+var selectedTile = null
 for(const loadoutTile of sortedTiles){
     console.log("checking tile " + loadoutTile.id)
     tilePositions = getTilePositions(loadoutTile, itemSizeX, itemSizeY)
@@ -51,6 +52,7 @@ for(const loadoutTile of sortedTiles){
         }
     }
     if(tilePositions.length){
+        selectedTile = loadoutTile;
         break;
     }
 };
@@ -95,7 +97,8 @@ function getTilePositions(loadoutTile, itemSizeL, itemSizeH){
 }
 
 if(! tilePositions.length){
-    ui.notifications.warn("unable to find space for " + selectedWeapon.prototypeToken.name + " token in (" + itemSizeX + "," + itemSizeY + ") or (" + itemSizeY + "," + itemSizeX + ")");
+    // TODO: Replace this with a popup dialog box asking if the item should still be placed in the actor's inventory despite not being able to be added to loadout
+    ui.notifications.error("unable to find space for " + selectedWeapon.prototypeToken.name + " token in (" + itemSizeX + "," + itemSizeY + ") or (" + itemSizeY + "," + itemSizeX + ")");
     return;
 }
 
@@ -113,3 +116,8 @@ if(itemRotated == true){
     itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, texture: {scaleX: itemSizeX, scaleY: itemSizeX}})
 }
 const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+if(selectedTile.flags.loadout.state == "owned"){
+    ui.notifications.warn("Added " + selectedWeapon.prototypeToken.name + " to " + playerId + "'s " + selectedTile.flags.loadout.type + ", which is not carried")
+} else {
+    ui.notifications.info("Added " + selectedWeapon.prototypeToken.name + " to " + playerId + "'s " + selectedTile.flags.loadout.type)
+}
