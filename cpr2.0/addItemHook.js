@@ -7,7 +7,6 @@ async function addLoadoutItem(itemDocument) {
     }
 
     // Only handle weapons and, by extension, grenades
-    var itemIsGrenade
     if((! itemDocument.type == "weapon") && (! itemDocument.type == "ammo")){
         return;
     } else if(itemDocument.type == "ammo"){
@@ -31,7 +30,12 @@ async function addLoadoutItem(itemDocument) {
     const gridSize = testScene.grid.size
     const playerId = itemDocument.parent.id
 
-    selectedWeapon = game.actors.getName(itemDocument.name)
+    // Get the weapon actor (sans quality conditions)
+    selectedWeapon = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
+    if(( selectedWeapon == null) || (selectedWeapon == undefined)){
+        ui.notifications.warn("unable to find loadout token for " + itemDocument.name)
+        return;
+    }
 
     // Test item size in grid units, not pixels
     let itemSizeX = selectedWeapon.prototypeToken.width
@@ -109,9 +113,29 @@ async function addLoadoutItem(itemDocument) {
     }
 
     if(! tilePositions.length){
-        // TODO: Replace this with a popup dialog box asking if the item should still be placed in the actor's inventory despite not being able to be added to loadout
-        ui.notifications.error("unable to find space for " + selectedWeapon.prototypeToken.name + " token in (" + itemSizeX + "," + itemSizeY + ") or (" + itemSizeY + "," + itemSizeX + ")");
-        return;
+        // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
+        //// we'll just delete the item if they don't choose 'yes'
+        // UNTESTED 2023-07-07 //
+        const addAnywayDialog = new Dialog({
+            title: "Loadout Option",
+            content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
+            buttons: {
+                drop: {
+                 icon: '<i class="fas fa-check"></i>',
+                 label: "Drop Item",
+                 callback: () => {
+                    itemDocument.delete()
+                    return;
+                 }
+                },
+                add: {
+                 icon: '<i class="fas fa-times"></i>',
+                 label: "Add Item",
+                 callback: () => {return;}
+                }
+               },
+               default: "drop"
+        }).render(true);
     }
 
     // Choose an available slot and drop a test token
@@ -121,6 +145,7 @@ async function addLoadoutItem(itemDocument) {
     let itemActor = game.actors.getName(selectedWeapon.prototypeToken.name)
     var itemTokenDoc
     console.log(itemRotated)
+
     if(itemRotated == true){
         console.log("creating rotated token")
         itemTokenDoc = await itemActor.getTokenDocument({
@@ -131,7 +156,16 @@ async function addLoadoutItem(itemDocument) {
     } else {
         itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, flags: {loadout: {"item": itemDocument.id}}})
     }
+
     const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+    // If the item has an ammo magazine, assign a 'health' bar to represent the current magazine
+    // Haven't decided whether to just do this at the actor level or not
+    /*
+    if(itemDocument.system.magazine){
+        addedToken.document.update(actorData.system.stats)
+    }
+    */
+
     if(selectedTile.flags.loadout.state == "owned"){
         ui.notifications.warn("Added " + selectedWeapon.prototypeToken.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type + ", which is not carried")
     } else {
