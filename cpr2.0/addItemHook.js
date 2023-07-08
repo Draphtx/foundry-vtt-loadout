@@ -131,7 +131,7 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: () => {return;}
+                 callback: () => {}
                 }
                },
                default: "drop"
