@@ -66,3 +66,9 @@ const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.fl
 
 console.log("Tiles that will fit item " + randomWeapon)
 console.log(sortedTiles)
+
+// Update a token's 'hp' value
+canvas.tokens.controlled[0].document._actor.system.derivedStats.hp.value = 2
+
+// Refresh a modified token (so that item bar changes show up after hp change)
+canvas.tokens.controlled[0].document.render
