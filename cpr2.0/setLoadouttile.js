@@ -24,7 +24,8 @@ const loadoutTileDialog = new Dialog({
           <option value="holster">Holster</option>
           <option value="pocket">Pocket</option>
           <option value="back/shoulder">Back/Shoulder</option>
-          <option value="luggage">Luggage</option>
+          <option value="backpack">Backpack</option>
+          <option value="duffel">Duffel</option>
           <option value="stash">Stash</option>
         </select>
       </div>
@@ -42,7 +43,7 @@ const loadoutTileDialog = new Dialog({
             label: `Apply Changes`    
             }
       },
-      default: 'yes',
+      default: 'apply',
       close: html => {
         let characterName = html.find('[name="characterName"]').val();
         let tileWeight = html.find('[name="weightSelect"]').val();
