@@ -125,7 +125,9 @@ async function addLoadoutItem(itemDocument) {
         console.log("creating rotated token")
         itemTokenDoc = await itemActor.getTokenDocument({
             x: dropPosition.x1, y: dropPosition.y1, width: itemSizeY, height: itemSizeX, 
-            rotation: 90, texture: {scaleX: itemSizeY, scaleY: itemSizeY}, flags: {loadout: {"item": itemDocument.id}}})
+            rotation: 90, texture: {scaleX: itemSizeY, scaleY: itemSizeY}, 
+            flags: {loadout: {"item": itemDocument.id}}
+        })
     } else {
         itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, flags: {loadout: {"item": itemDocument.id}}})
     }
@@ -136,6 +138,8 @@ async function addLoadoutItem(itemDocument) {
         ui.notifications.info("Added " + selectedWeapon.prototypeToken.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type)
     }
 
+    // Update the inventory item's equipped state based on where the token ended up
+    itemDocument.update({"system.equipped": selectedTile.flags.loadout.state})
 }
 
 Hooks.off("createItem");
