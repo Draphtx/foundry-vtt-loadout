@@ -7,7 +7,6 @@ async function addLoadoutItem(itemDocument) {
     }
 
     // Only handle weapons and, by extension, grenades
-    var itemIsGrenade
     if((! itemDocument.type == "weapon") && (! itemDocument.type == "ammo")){
         return;
     } else if(itemDocument.type == "ammo"){
@@ -109,9 +108,29 @@ async function addLoadoutItem(itemDocument) {
     }
 
     if(! tilePositions.length){
-        // TODO: Replace this with a popup dialog box asking if the item should still be placed in the actor's inventory despite not being able to be added to loadout
-        ui.notifications.error("unable to find space for " + selectedWeapon.prototypeToken.name + " token in (" + itemSizeX + "," + itemSizeY + ") or (" + itemSizeY + "," + itemSizeX + ")");
-        return;
+        // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
+        //// we'll just delete the item if they don't choose 'yes'
+        // UNTESTED 2023-07-07 //
+        const addAnywayDialog = new Dialog({
+            title: "Loadout Option",
+            content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
+            buttons: {
+                drop: {
+                 icon: '<i class="fas fa-check"></i>',
+                 label: "Drop Item",
+                 callback: () => {
+                    itemDocument.delete()
+                    return;
+                 }
+                },
+                add: {
+                 icon: '<i class="fas fa-times"></i>',
+                 label: "Add Item",
+                 callback: () => {}
+                }
+               },
+               default: "drop"
+        }).render(true);
     }
 
     // Choose an available slot and drop a test token
