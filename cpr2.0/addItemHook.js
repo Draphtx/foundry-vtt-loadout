@@ -131,7 +131,7 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: () => {}
+                 callback: () => {return;}
                 }
                },
                default: "drop"
@@ -139,8 +139,6 @@ async function addLoadoutItem(itemDocument) {
     }
 
     // Choose an available slot and drop a test token
-    //// Someday we should sort this but in the current iteration the earlier indexes are all the 
-    //// furthest-upper-left, which is what I want anyway.
     let dropPosition = tilePositions[0]
     let itemActor = game.actors.getName(selectedWeapon.prototypeToken.name)
     var itemTokenDoc
@@ -149,27 +147,43 @@ async function addLoadoutItem(itemDocument) {
     if(itemRotated == true){
         console.log("creating rotated token")
         itemTokenDoc = await itemActor.getTokenDocument({
+            name: itemDocument.name,
             x: dropPosition.x1, y: dropPosition.y1, width: itemSizeY, height: itemSizeX, 
             rotation: 90, texture: {scaleX: itemSizeY, scaleY: itemSizeY}, 
-            flags: {loadout: {"item": itemDocument.id}}
+            flags: {
+                loadout: {
+                    "item": itemDocument.id
+                }}
         })
     } else {
-        itemTokenDoc = await itemActor.getTokenDocument({x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, flags: {loadout: {"item": itemDocument.id}}})
+        itemTokenDoc = await itemActor.getTokenDocument({
+            name: itemDocument.name,
+            x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, 
+            flags: {
+                loadout: {
+                    "item": itemDocument.id
+                }}})
     }
-
+    // TODO: Look at merging things into the itemTokenDoc so's we don't have to update the dropped token after the fact
     const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+    
     // If the item has an ammo magazine, assign a 'health' bar to represent the current magazine
-    // Haven't decided whether to just do this at the actor level or not
-    /*
-    if(itemDocument.system.magazine){
-        addedToken.document.update(actorData.system.stats)
+    // Similarly we should set the token's disposition to Red (poor), Yellow (standard), or 
+    //// Green (Excellent)
+    console.log(itemDocument.system.magazine);
+    if("magazine" in itemDocument.system){
+        console.log("setting token health bars")
+        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
+        loadoutItemToken._actor.system.derivedStats.hp.value = itemDocument.system.magazine.value
+        loadoutItemToken._actor.system.derivedStats.hp.max = itemDocument.system.magazine.max
+        loadoutItemToken.object.refresh()
     }
-    */
+    
 
     if(selectedTile.flags.loadout.state == "owned"){
-        ui.notifications.warn("Added " + selectedWeapon.prototypeToken.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type + ", which is not carried")
+        ui.notifications.warn("Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type + ", which is not carried")
     } else {
-        ui.notifications.info("Added " + selectedWeapon.prototypeToken.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type)
+        ui.notifications.info("Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type)
     }
 
     // Update the inventory item's equipped state based on where the token ended up
