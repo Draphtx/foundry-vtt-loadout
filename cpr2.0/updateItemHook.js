@@ -3,7 +3,7 @@ Hooks.on("updateItem", (document, options, userid) => updateLoadoutItem(document
 async function updateLoadoutItem(itemDocument){
     // This function is only used to update the ammo bars of loadout weapons
     if(! itemDocument.system.magazine){
-        console.log("updated item is not a weapon")
+        console.log("updated item is not equipped with a magazine")
         return;
     }
 
@@ -15,6 +15,8 @@ async function updateLoadoutItem(itemDocument){
         return;
     }
 
+    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
+    //// magazine attribute to fill the bars instead of hijacking hp
     loadoutItemToken._actor.system.derivedStats.hp.value = itemDocument.system.magazine.value
     loadoutItemToken.object.refresh()
 
