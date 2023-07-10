@@ -170,13 +170,22 @@ async function addLoadoutItem(itemDocument) {
     // If the item has an ammo magazine, assign a 'health' bar to represent the current magazine
     // Similarly we should set the token's disposition to Red (poor), Yellow (standard), or 
     //// Green (Excellent)
-    console.log(itemDocument.system.magazine);
+    console.log(addedToken)
     if("magazine" in itemDocument.system){
         console.log("setting token health bars")
         const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
-        loadoutItemToken._actor.system.derivedStats.hp.value = itemDocument.system.magazine.value
-        loadoutItemToken._actor.system.derivedStats.hp.max = itemDocument.system.magazine.max
-        loadoutItemToken.object.refresh()
+        console.log(loadoutItemToken)
+        loadoutItemToken.update({
+            displayBars: 50, 
+            actorData: { 
+                system: { 
+                    derivedStats: { 
+                        hp: { 
+                            max: itemDocument.system.magazine.max, value: itemDocument.system.magazine.value
+                        }
+                    }
+                }
+            }})
     }
     
 
