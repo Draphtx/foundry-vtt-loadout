@@ -17,8 +17,7 @@ async function updateLoadoutItem(itemDocument){
 
     // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
     //// magazine attribute to fill the bars instead of hijacking hp
-    loadoutItemToken._actor.system.derivedStats.hp.value = itemDocument.system.magazine.value
-    loadoutItemToken.object.refresh()
+    loadoutItemToken.update({system: {derivedStats: {hp: {value: itemDocument.system.magazine.value}}}})
 
     Hooks.off("updateItem");
 }
