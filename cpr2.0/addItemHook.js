@@ -171,7 +171,7 @@ async function addLoadoutItem(itemDocument) {
     // Similarly we should set the token's disposition to Red (poor), Yellow (standard), or 
     //// Green (Excellent)
     console.log(addedToken)
-    if("magazine" in itemDocument.system){
+    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         console.log("setting token health bars")
         const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
         console.log(loadoutItemToken)

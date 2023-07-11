@@ -4,6 +4,8 @@ async function updateLoadoutItem(itemDocument){
     // This function is only used to update the ammo bars of loadout weapons
     if(! itemDocument.system.magazine){
         return;
+    } else if(itemDocument.system.magazine.max == 0){
+        return;
     }
 
     const loadoutScene = game.scenes.getName("TileTest")
