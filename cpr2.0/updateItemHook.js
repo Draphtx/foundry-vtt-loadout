@@ -8,8 +8,8 @@ async function updateLoadoutItem(itemDocument){
         return;
     }
 
-    const loadoutScene = game.scenes.getName("TileTest")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
 
     if((loadoutItemToken == null) || (loadoutItemToken == undefined)){
         console.log("loadout item not found")
