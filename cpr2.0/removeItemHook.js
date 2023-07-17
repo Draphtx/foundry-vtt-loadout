@@ -4,8 +4,8 @@
 Hooks.on("deleteItem", (document, options, userid) => removeLoadoutItem(document));
 
 function removeLoadoutItem(itemDocument) {
-    const loadoutScene = game.scenes.getName("TileTest")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
     
     if(loadoutItemToken == undefined || loadoutItemToken == null) {
         ui.notifications.error("removeLoadoutItem: unable to find token related to " + itemDocument.id + " on loadout scene with id" + loadoutScene.id)
