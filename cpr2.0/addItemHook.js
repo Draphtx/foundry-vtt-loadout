@@ -38,7 +38,7 @@ async function addLoadoutItem(itemDocument) {
         }
     }
 
-    const testScene = game.scenes.getName("TileTest")
+    const testScene = game.scenes.getName("Crew Loadout")
     const gridSize = testScene.grid.size
     const playerId = itemDocument.parent.id
 
@@ -185,7 +185,7 @@ async function addLoadoutItem(itemDocument) {
     console.log(addedToken)
     if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         console.log("setting token health bars")
-        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
+        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
         console.log(loadoutItemToken)
         const dispositionMap = {"poor": -1, "standard": 0, "excellent": 1}
         // TODO: Also set the Hover For Everyone name setting
