@@ -24,6 +24,18 @@ async function addLoadoutItem(itemDocument) {
         if(! itemIsGrenade){
             return;
         }
+    } else if(itemDocument.type == "weapon"){
+        itemIsExcluded = [
+            "Martial Arts",
+            "Battleglove",
+            "Rippers",
+            "Unarmed",
+            "Thrown Weapon"
+        ].includes(itemDocument.name)
+        if(itemIsExcluded){
+            console.log("CPR Weapon item explicitly excluded from loadout")
+            return;
+        }
     }
 
     const testScene = game.scenes.getName("TileTest")
@@ -175,13 +187,18 @@ async function addLoadoutItem(itemDocument) {
         console.log("setting token health bars")
         const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.find(token => token.flags.loadout.item == itemDocument.id)
         console.log(loadoutItemToken)
+        const dispositionMap = {"poor": -1, "standard": 0, "excellent": 1}
+        // TODO: Also set the Hover For Everyone name setting
         loadoutItemToken.update({
+            disposition: dispositionMap[itemDocument.system.quality],
+            displayName: 30,
             displayBars: 50, 
             actorData: { 
                 system: { 
                     derivedStats: { 
                         hp: { 
-                            max: itemDocument.system.magazine.max, value: itemDocument.system.magazine.value
+                            max: itemDocument.system.magazine.max, 
+                            value: itemDocument.system.magazine.value
                         }
                     }
                 }
