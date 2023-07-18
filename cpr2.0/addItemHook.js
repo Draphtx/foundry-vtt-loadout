@@ -88,6 +88,7 @@ async function addLoadoutItem(itemDocument) {
     // Get an array of possible positions for the item to land if nothing was blocking its space
     function getTilePositions(loadoutTile, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
+        //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
         for(let rowNum of Array(loadoutTile.height/gridSize).keys()){
             for(let colNum of Array(loadoutTile.width/gridSize).keys()){
@@ -128,7 +129,7 @@ async function addLoadoutItem(itemDocument) {
         // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
         //// we'll just delete the item if they don't choose 'yes'
         // UNTESTED 2023-07-07 //
-        const addAnywayDialog = new Dialog({
+        const noSpaceDialog = new Dialog({
             title: "Loadout Option",
             content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
             buttons: {
@@ -144,6 +145,28 @@ async function addLoadoutItem(itemDocument) {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
                  callback: () => {return;}
+                }
+               },
+               default: "drop"
+        }).render(true);
+    }
+    if(selectedTile.flags.loadout.state == "owned"){
+        const stashOnlyDialog = new Dialog({
+            title: "Loadout Option",
+            content: ("<center><p>Unable to find an available carry slot.<br>Add item to " + selectedTile.flags.loadout.type + "?</center>"),
+            buttons: {
+                drop: {
+                 icon: '<i class="fas fa-check"></i>',
+                 label: "Drop Item",
+                 callback: () => {
+                    itemDocument.delete()
+                    return;
+                 }
+                },
+                add: {
+                 icon: '<i class="fas fa-times"></i>',
+                 label: "Add Item",
+                 callback: () => {}
                 }
                },
                default: "drop"
@@ -185,7 +208,9 @@ async function addLoadoutItem(itemDocument) {
     console.log(addedToken)
     if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         console.log("setting token health bars")
-        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
+        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.filter(
+            token => token.flags.loadout).find(
+                token => token.flags.loadout.item == itemDocument.id)
         console.log(loadoutItemToken)
         const dispositionMap = {"poor": -1, "standard": 0, "excellent": 1}
         // TODO: Also set the Hover For Everyone name setting
@@ -207,9 +232,15 @@ async function addLoadoutItem(itemDocument) {
     
 
     if(selectedTile.flags.loadout.state == "owned"){
-        ui.notifications.warn("Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type + ", which is not carried")
+        ui.notifications.warn(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadout.type + ", which is not carried"
+            )
     } else {
-        ui.notifications.info("Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + selectedTile.flags.loadout.type)
+        ui.notifications.info(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadout.type
+            )
     }
 
     // Update the inventory item's equipped state based on where the token ended up
