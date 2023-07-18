@@ -1,14 +1,14 @@
 Hooks.on("createItem", (document, options, userid) => addLoadoutItem(document));
 
-async function addLoadoutItem(itemDocument) {
+function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for NPCs
     if(itemDocument.parent.type != "character"){
-        return;
+        return false;
     }
 
     // Only handle weapons and, by extension, grenades
     if((! itemDocument.type == "weapon") && (! itemDocument.type == "ammo")){
-        return;
+        return false;
     } else if(itemDocument.type == "ammo"){
         itemIsGrenade = [
             "Grenade (Armor Piercing)",
@@ -22,7 +22,9 @@ async function addLoadoutItem(itemDocument) {
             "Grenade (Teargas)"
         ].includes(itemDocument.name)
         if(! itemIsGrenade){
-            return;
+            return false;
+        } else { 
+            return true; 
         }
     } else if(itemDocument.type == "weapon"){
         itemIsExcluded = [
@@ -34,18 +36,41 @@ async function addLoadoutItem(itemDocument) {
         ].includes(itemDocument.name)
         if(itemIsExcluded){
             console.log("CPR Weapon item explicitly excluded from loadout")
-            return;
+            return false;
+        } else { 
+            return true; 
         }
     }
+}
 
-    const testScene = game.scenes.getName("Crew Loadout")
-    const gridSize = testScene.grid.size
-    const playerId = itemDocument.parent.id
-
+function findItemActor(itemDocument){
     // Get the weapon actor (sans quality conditions)
-    selectedWeapon = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
+    let selectedWeapon = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
     if(( selectedWeapon == null) || (selectedWeapon == undefined)){
-        ui.notifications.warn("unable to find loadout token for " + itemDocument.name)
+        return false;
+    } else {
+        return selectedWeapon;
+    }
+}
+
+async function addLoadoutItem(itemDocument) {
+    
+    // Perform checks to ensure that the item is one we will try to handle using the loadout system
+    if(! verifyItemSuitability(itemDocument)){
+        console.log("item loadout suitability check returned false")
+        return;
+    }
+
+    // Eventually to be configurable by the user, also probably some other checks to be done here (e.g. duplicate scene name)
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    
+    // The grid size basically becomes our unit of measurement for everything to follow
+    const gridSize = loadoutScene.grid.size
+
+    // Try to locate an actor and token
+    selectedWeapon = findItemActor(itemDocument)
+    if(! selectedWeapon){
+        ui.notifications.error("unable to find loadout token for " + itemDocument.name)
         return;
     }
 
@@ -55,10 +80,10 @@ async function addLoadoutItem(itemDocument) {
     let itemRotated = false
 
     // Get all loadout tiles from the loadout scene
-    loadoutTiles = testScene.tiles.filter(tile => tile.flags.loadout)
+    loadoutTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout)
 
     // filter loadout tiles to those owner by the character and those large enough to accommodate the item
-    const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == playerId)
+    const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == itemDocument.parent.id)
 
     // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
     const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
@@ -200,7 +225,7 @@ async function addLoadoutItem(itemDocument) {
                 }}})
     }
     // TODO: Look at merging things into the itemTokenDoc so's we don't have to update the dropped token after the fact
-    const addedToken = await testScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+    const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
     
     // If the item has an ammo magazine, assign a 'health' bar to represent the current magazine
     // Similarly we should set the token's disposition to Red (poor), Yellow (standard), or 
@@ -208,7 +233,7 @@ async function addLoadoutItem(itemDocument) {
     console.log(addedToken)
     if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         console.log("setting token health bars")
-        const loadoutItemToken = game.scenes.get(testScene.id).tokens.contents.filter(
+        const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(
             token => token.flags.loadout).find(
                 token => token.flags.loadout.item == itemDocument.id)
         console.log(loadoutItemToken)
