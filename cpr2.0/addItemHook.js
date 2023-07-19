@@ -45,9 +45,11 @@ function verifyItemSuitability(itemDocument){
     }
 }
 
-// Get the weapon actor (sans quality conditions)
+// Get the weapon's actor representation
 function findItemActor(itemDocument){
-    let selectedItemActor = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
+    let selectedItemActor = game.actors.getName(
+        itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0]  // Same actor regardless of weapon quality
+        )
     if(( selectedItemActor == null) || (selectedItemActor == undefined)){
         return false;
     } else {
@@ -55,11 +57,14 @@ function findItemActor(itemDocument){
     }
 }
 
-// Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags,
-//// and return the resulting tiles in order by preference weight
+// Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
-    const validTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout).filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
-    // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
+    const validTiles = loadoutScene.tiles.filter(
+        tile => tile.flags.loadout).filter(
+            tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && 
+            tile.flags.loadout.owner == itemDocument.parent.id)
+    
+    // Return the valid tiles, sorted by preference weight
     return validTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 }
 
@@ -102,7 +107,9 @@ function processTilePositions(validTiles, gridSize, itemOrientation){
             }
         }
         // Find any tokens that may already be over the tile's area
-        let blockingTokens = game.canvas.tokens.objects.children.filter(t => t.x >= loadoutTile.x <= (loadoutTile.x + loadoutTile.width) && t.y >= loadoutTile.y <=(loadoutTile.y + loadoutTile.height))
+        let blockingTokens = game.canvas.tokens.objects.children.filter(
+            t => t.x >= loadoutTile.x <= (loadoutTile.x + loadoutTile.width) && 
+                 t.y >= loadoutTile.y <=(loadoutTile.y + loadoutTile.height))
 
         // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
         // There is something going on here with the use of the myItemSize * gridSize that makes me have to do this extra step of determining 
@@ -143,7 +150,6 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
         disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
         displayName: 30,                                                    // Show nameplate when hovered by anyone
         flags: {loadout: {"item": itemDocument.id}},                        // Link the token to the item by id
-        actorData: {system: {equipped: selectedTile.flags.loadout.state}},  // Set the item's equipped state based on the tile that it ended up in
         x: validPositions[0].x1,                                            // First-available position's x coord
         y: validPositions[0].y1,                                            // First-available position's y coord
         rotation: itemOrientation.rotation                                  // Token's rotation
@@ -165,10 +171,14 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     // Set the token's 'health' bar to represent magazine contents, if available
     if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
-        itemTokenSettings.actorData.system.derivedStats = {
-            hp: {
-                max: itemDocument.system.magazine.max,
-                value: itemDocument.system.magazine.value
+        itemTokenSettings.actorData = {
+            system: {
+                derivedStats: {
+                    hp: {
+                        max: itemDocument.system.magazine.max,
+                        value: itemDocument.system.magazine.value
+                    }
+                }
             }
         }
     }
@@ -226,14 +236,12 @@ async function addLoadoutItem(itemDocument) {
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
     const [selectedTile, validPositions] = processTilePositions(validTiles, gridSize, itemOrientation)
 
+    // Account for some edge cases (like a player character having no available slots at all, or only slots 
+    //// that are not currently carried) and/or create the token.
     if(! validPositions.length){
-        // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
-        //// we'll just delete the item if they don't choose 'yes'
-        
-        // If there are no available positions at all
         const noSpaceDialog = new Dialog({
             title: "Loadout Option",
-            content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
+            content: "<center><p>Unable to find an available Loadout slot.<br>Add " + itemDocument.name + " to inventory regardless?</p></center>",
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -246,20 +254,15 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: () => {return;}
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene) }
                 }
                },
                default: "drop"
         }).render(true);
-    }
-
-    // If the only available positions are within tiles whose state is 'owned'; that is, if the player cannot add the item to their active loadout
-    //// E.g. if a player cannot accommodate a grenade launcher in their active loadout, should it _really_ go to their stash or should they have 
-    //// to make a tough call about how to best-utilize their active inventory?
-    if(selectedTile.flags.loadout.state == "owned"){
+    } else if(selectedTile.flags.loadout.state == "owned"){
         const stashOnlyDialog = new Dialog({
             title: "Loadout Option",
-            content: ("<center><p>Unable to find an available carry slot.<br>Add item to " + selectedTile.flags.loadout.type + "?</center>"),
+            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadout.type + "?</center>"),
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -272,16 +275,18 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: () => {}
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene) }
                 }
                },
                default: "drop"
         }).render(true);
+    } else {
+        placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene)
     }
 
-    // Place the actor token in the loadout scene
-    placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene)
-
+    // Update the inventory item's equipped state based on where the token ended up
+    itemDocument.update({"system.equipped": selectedTile.flags.loadout.state})
+    return;
 }
 
 Hooks.off("createItem");
