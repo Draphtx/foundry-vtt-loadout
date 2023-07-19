@@ -45,11 +45,11 @@ function verifyItemSuitability(itemDocument){
 
 function findItemActor(itemDocument){
     // Get the weapon actor (sans quality conditions)
-    let selectedWeapon = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
-    if(( selectedWeapon == null) || (selectedWeapon == undefined)){
+    let selectedItemActor = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
+    if(( selectedItemActor == null) || (selectedItemActor == undefined)){
         return false;
     } else {
-        return selectedWeapon;
+        return selectedItemActor;
     }
 }
 
@@ -64,37 +64,7 @@ function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
     return applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 }
 
-async function addLoadoutItem(itemDocument) {
-    // Perform checks to ensure that the item is one we will try to handle using the loadout system
-    if(! verifyItemSuitability(itemDocument)){
-        console.log("item loadout suitability check failed")
-        return;
-    }
-
-    // Eventually to be configurable by the user, also probably some other checks to be done here (e.g. duplicate scene name)
-    const loadoutScene = game.scenes.getName("Crew Loadout")
-    
-    // The grid size basically becomes our unit of measurement for everything to follow
-    const gridSize = loadoutScene.grid.size
-
-    // Try to locate an actor and token matching the item name
-    selectedWeapon = findItemActor(itemDocument)
-    if(! selectedWeapon){
-        ui.notifications.error("unable to find loadout token for " + itemDocument.name)
-        return;
-    }
-
-    // Item token size and rotation boolean
-    const itemOrientation = {
-        size_x: selectedWeapon.prototypeToken.width,
-        size_y: selectedWeapon.prototypeToken.height,
-        rotated: false
-    }
-    // Get tiles in the loadout scene that could _potentially_ hold the payload based purely on geometry
-    const validTiles = findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation)
-
-    // EVERYTHING FROM HERE DOWN NEEDS A HUGE REFACTOR & CLEANUP
-    // process each tile
+function processTilePositions(validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
     for(const loadoutTile of validTiles){
@@ -154,63 +124,17 @@ async function addLoadoutItem(itemDocument) {
         }
         return itemPositions;
     }
+    return [selectedTile, itemPositions]
+}
 
-    if(! tilePositions.length){
-        // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
-        //// we'll just delete the item if they don't choose 'yes'
-        // UNTESTED 2023-07-07 //
-        const noSpaceDialog = new Dialog({
-            title: "Loadout Option",
-            content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
-            buttons: {
-                drop: {
-                 icon: '<i class="fas fa-check"></i>',
-                 label: "Drop Item",
-                 callback: () => {
-                    itemDocument.delete()
-                    return;
-                 }
-                },
-                add: {
-                 icon: '<i class="fas fa-times"></i>',
-                 label: "Add Item",
-                 callback: () => {return;}
-                }
-               },
-               default: "drop"
-        }).render(true);
-    }
-    if(selectedTile.flags.loadout.state == "owned"){
-        const stashOnlyDialog = new Dialog({
-            title: "Loadout Option",
-            content: ("<center><p>Unable to find an available carry slot.<br>Add item to " + selectedTile.flags.loadout.type + "?</center>"),
-            buttons: {
-                drop: {
-                 icon: '<i class="fas fa-check"></i>',
-                 label: "Drop Item",
-                 callback: () => {
-                    itemDocument.delete()
-                    return;
-                 }
-                },
-                add: {
-                 icon: '<i class="fas fa-times"></i>',
-                 label: "Add Item",
-                 callback: () => {}
-                }
-               },
-               default: "drop"
-        }).render(true);
-    }
-
-    // Choose an available slot and drop a test token
-    let dropPosition = tilePositions[0]
-    let itemActor = game.actors.getName(selectedWeapon.prototypeToken.name)
+function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor){
+    // Grab the first available slot
+    let dropPosition = validPositions[0]
     var itemTokenDoc
 
     if(itemOrientation.rotated == true){
         console.log("creating rotated token")
-        itemTokenDoc = await itemActor.getTokenDocument({
+        itemTokenDoc = await selectedItemActor.getTokenDocument({
             name: itemDocument.name,
             x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_y, height: itemOrientation.size_x, 
             rotation: 90, texture: {scaleX: itemOrientation.size_y, scaleY: itemOrientation.size_y}, 
@@ -220,7 +144,7 @@ async function addLoadoutItem(itemDocument) {
                 }}
         })
     } else {
-        itemTokenDoc = await itemActor.getTokenDocument({
+        itemTokenDoc = await selectedItemActor.getTokenDocument({
             name: itemDocument.name,
             x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_x, height: itemOrientation.size_y, 
             flags: {
@@ -249,6 +173,7 @@ async function addLoadoutItem(itemDocument) {
             displayBars: 50, 
             actorData: { 
                 system: { 
+                    equipped: selectedTile.flags.loadout.state,
                     derivedStats: { 
                         hp: { 
                             max: itemDocument.system.magazine.max, 
@@ -258,8 +183,98 @@ async function addLoadoutItem(itemDocument) {
                 }
             }})
     }
-    
+}
 
+async function addLoadoutItem(itemDocument) {
+    // Perform checks to ensure that the item is one we will try to handle using the loadout system
+    if(! verifyItemSuitability(itemDocument)){
+        console.log("item loadout suitability check failed")
+        return;
+    }
+
+    // Eventually to be configurable by the user, also probably some other checks to be done here (e.g. duplicate scene name)
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    
+    // The grid size basically becomes our unit of measurement for everything to follow
+    const gridSize = loadoutScene.grid.size
+
+    // Try to locate an actor and token matching the item name
+    selectedItemActor = findItemActor(itemDocument)
+    if(! selectedItemActor){
+        ui.notifications.error("unable to find loadout token for " + itemDocument.name)
+        return;
+    }
+
+    // Item token size and rotation boolean
+    const itemOrientation = {
+        size_x: selectedItemActor.prototypeToken.width,
+        size_y: selectedItemActor.prototypeToken.height,
+        rotated: false
+    }
+
+    // Get tiles in the loadout scene that could _potentially_ hold the payload based purely on geometry
+    const validTiles = findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation)
+
+    // Process the preference-sorted array of tiles until we find one that can accommodate the item token
+    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
+
+    if(! validPositions.length){
+        // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
+        //// we'll just delete the item if they don't choose 'yes'
+        
+        // If there are no available positions at all
+        const noSpaceDialog = new Dialog({
+            title: "Loadout Option",
+            content: "<p>Unable to find an available Loadout slot.<br>Add to inventory regardless?</p>",  // TODO: Can we use the item name as a variable in this message? Surely.
+            buttons: {
+                drop: {
+                 icon: '<i class="fas fa-check"></i>',
+                 label: "Drop Item",
+                 callback: () => {
+                    itemDocument.delete()
+                    return;
+                 }
+                },
+                add: {
+                 icon: '<i class="fas fa-times"></i>',
+                 label: "Add Item",
+                 callback: () => {return;}
+                }
+               },
+               default: "drop"
+        }).render(true);
+    }
+
+    // If the only available positions are within tiles whose state is 'owned'; that is, if the player cannot add the item to their active loadout
+    //// E.g. if a player cannot accommodate a grenade launcher in their active loadout, should it _really_ go to their stash or should they have 
+    //// to make a tough call about how to best-utilize their active inventory?
+    if(selectedTile.flags.loadout.state == "owned"){
+        const stashOnlyDialog = new Dialog({
+            title: "Loadout Option",
+            content: ("<center><p>Unable to find an available carry slot.<br>Add item to " + selectedTile.flags.loadout.type + "?</center>"),
+            buttons: {
+                drop: {
+                 icon: '<i class="fas fa-check"></i>',
+                 label: "Drop Item",
+                 callback: () => {
+                    itemDocument.delete()
+                    return;
+                 }
+                },
+                add: {
+                 icon: '<i class="fas fa-times"></i>',
+                 label: "Add Item",
+                 callback: () => {}
+                }
+               },
+               default: "drop"
+        }).render(true);
+    }
+
+    // Place the actor token in the loadout scene
+    placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor)
+
+    // Send a notification
     if(selectedTile.flags.loadout.state == "owned"){
         ui.notifications.warn(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
@@ -271,9 +286,6 @@ async function addLoadoutItem(itemDocument) {
             selectedTile.flags.loadout.type
             )
     }
-
-    // Update the inventory item's equipped state based on where the token ended up
-    itemDocument.update({"system.equipped": selectedTile.flags.loadout.state})
 }
 
 Hooks.off("createItem");
