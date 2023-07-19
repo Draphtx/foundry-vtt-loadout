@@ -20,7 +20,7 @@ const loadoutTileDialog = new Dialog({
       </div>
       <div class="form-group">
         <label for="typeSelect">Storage Type</label>
-        <select name="stateSelect">
+        <select name="typeSelect">
           <option value="holster">Holster</option>
           <option value="pocket">Pocket</option>
           <option value="back/shoulder">Back/Shoulder</option>

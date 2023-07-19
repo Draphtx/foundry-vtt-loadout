@@ -69,7 +69,7 @@ function processTilePositions(validTiles, gridSize, itemOrientation){
     var selectedTile = null
     for(const loadoutTile of validTiles){
         console.log("checking tile " + loadoutTile.id)
-        tilePositions = getTilePositions(loadoutTile, itemOrientation.size_x, itemOrientation.size_y)
+        tilePositions = getTilePositions(loadoutTile, gridSize, itemOrientation.size_x, itemOrientation.size_y)
 
         if(! tilePositions.length){
             if(itemOrientation.size_x != itemOrientation.size_y){
