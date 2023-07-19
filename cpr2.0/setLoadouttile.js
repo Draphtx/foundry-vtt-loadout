@@ -1,3 +1,4 @@
+// Manually-activated macro to set up the loadout tiles for a character
 const loadoutTileDialog = new Dialog({
     title: "Define Loadout Tile Options", 
     content:`
@@ -20,7 +21,7 @@ const loadoutTileDialog = new Dialog({
       </div>
       <div class="form-group">
         <label for="typeSelect">Storage Type</label>
-        <select name="stateSelect">
+        <select name="typeSelect">
           <option value="holster">Holster</option>
           <option value="pocket">Pocket</option>
           <option value="back/shoulder">Back/Shoulder</option>
