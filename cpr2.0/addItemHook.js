@@ -53,11 +53,21 @@ function findItemActor(itemDocument){
     }
 }
 
+function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
+    // Get all loadout tiles from the loadout scene
+    loadoutTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout)
+
+    // filter loadout tiles to those owner by the character and those large enough to accommodate the item
+    const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
+
+    // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
+    return applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+}
+
 async function addLoadoutItem(itemDocument) {
-    
     // Perform checks to ensure that the item is one we will try to handle using the loadout system
     if(! verifyItemSuitability(itemDocument)){
-        console.log("item loadout suitability check returned false")
+        console.log("item loadout suitability check failed")
         return;
     }
 
@@ -67,40 +77,35 @@ async function addLoadoutItem(itemDocument) {
     // The grid size basically becomes our unit of measurement for everything to follow
     const gridSize = loadoutScene.grid.size
 
-    // Try to locate an actor and token
+    // Try to locate an actor and token matching the item name
     selectedWeapon = findItemActor(itemDocument)
     if(! selectedWeapon){
         ui.notifications.error("unable to find loadout token for " + itemDocument.name)
         return;
     }
 
-    // Test item size in grid units, not pixels
-    let itemSizeX = selectedWeapon.prototypeToken.width
-    let itemSizeY = selectedWeapon.prototypeToken.height
-    let itemRotated = false
-
-    // Get all loadout tiles from the loadout scene
-    loadoutTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout)
-
-    // filter loadout tiles to those owner by the character and those large enough to accommodate the item
-    const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemSizeX, itemSizeY) && tile.flags.loadout.owner == itemDocument.parent.id)
-
-    // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
-    const sortedTiles = applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+    // Item token size and rotation boolean
+    const itemOrientation = {
+        size_x: selectedWeapon.prototypeToken.width,
+        size_y: selectedWeapon.prototypeToken.height,
+        rotated: false
+    }
+    // Get tiles in the loadout scene that could _potentially_ hold the payload based purely on geometry
+    const validTiles = findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation)
 
     // EVERYTHING FROM HERE DOWN NEEDS A HUGE REFACTOR & CLEANUP
     // process each tile
     var tilePositions = [];
     var selectedTile = null
-    for(const loadoutTile of sortedTiles){
+    for(const loadoutTile of validTiles){
         console.log("checking tile " + loadoutTile.id)
-        tilePositions = getTilePositions(loadoutTile, itemSizeX, itemSizeY)
+        tilePositions = getTilePositions(loadoutTile, itemOrientation.size_x, itemOrientation.size_y)
 
         if(! tilePositions.length){
-            if(itemSizeX != itemSizeY){
-                tilePositions = getTilePositions(loadoutTile, itemSizeY, itemSizeX)
+            if(itemOrientation.size_x != itemOrientation.size_y){
+                tilePositions = getTilePositions(loadoutTile, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
-                    itemRotated = true
+                    itemOrientation.rotated = true
                 }
             }
         }
@@ -202,14 +207,13 @@ async function addLoadoutItem(itemDocument) {
     let dropPosition = tilePositions[0]
     let itemActor = game.actors.getName(selectedWeapon.prototypeToken.name)
     var itemTokenDoc
-    console.log(itemRotated)
 
-    if(itemRotated == true){
+    if(itemOrientation.rotated == true){
         console.log("creating rotated token")
         itemTokenDoc = await itemActor.getTokenDocument({
             name: itemDocument.name,
-            x: dropPosition.x1, y: dropPosition.y1, width: itemSizeY, height: itemSizeX, 
-            rotation: 90, texture: {scaleX: itemSizeY, scaleY: itemSizeY}, 
+            x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_y, height: itemOrientation.size_x, 
+            rotation: 90, texture: {scaleX: itemOrientation.size_y, scaleY: itemOrientation.size_y}, 
             flags: {
                 loadout: {
                     "item": itemDocument.id
@@ -218,7 +222,7 @@ async function addLoadoutItem(itemDocument) {
     } else {
         itemTokenDoc = await itemActor.getTokenDocument({
             name: itemDocument.name,
-            x: dropPosition.x1, y: dropPosition.y1, width: itemSizeX, height: itemSizeY, 
+            x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_x, height: itemOrientation.size_y, 
             flags: {
                 loadout: {
                     "item": itemDocument.id
