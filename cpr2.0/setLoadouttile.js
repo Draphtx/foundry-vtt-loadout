@@ -1,3 +1,4 @@
+// Manually-activated macro to set up the loadout tiles for a character
 const loadoutTileDialog = new Dialog({
     title: "Define Loadout Tile Options", 
     content:`

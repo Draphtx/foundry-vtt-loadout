@@ -1,3 +1,6 @@
+// CREATE ITEM HOOK
+//// Responsible for adding items to a character's loadout when (applicable) items are added to the 
+//// character's inventory in the character sheet.
 Hooks.on("createItem", (document, options, userid) => addLoadoutItem(document));
 
 // Verifies that the item is something that we want to handle in the loadout system
@@ -290,3 +293,49 @@ async function addLoadoutItem(itemDocument) {
 }
 
 Hooks.off("createItem");
+
+// DELETE ITEM HOOK
+//// Responsible for removing weapon item representations from the loadout screen when the linked 
+//// item is removed from the player's inventory.
+Hooks.on("deleteItem", (document, options, userid) => removeLoadoutItem(document));
+
+function removeLoadoutItem(itemDocument) {
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
+    
+    if(loadoutItemToken == undefined || loadoutItemToken == null) {
+        ui.notifications.error("removeLoadoutItem: unable to find token related to " + itemDocument.id + " on loadout scene with id" + loadoutScene.id)
+        return;
+    } else {
+        loadoutItemToken.delete();
+        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout")
+    }
+    Hooks.off("deleteItem")
+};
+
+// UPDATE ITEM HOOK
+//// Updates item tokens' 'health' bar when a weapon magazine changes states
+Hooks.on("updateItem", (document, options, userid) => updateLoadoutItem(document));
+
+async function updateLoadoutItem(itemDocument){
+    // This function is only used to update the ammo bars of loadout weapons
+    if(! itemDocument.system.magazine){
+        return;
+    } else if(itemDocument.system.magazine.max == 0){
+        return;
+    }
+
+    const loadoutScene = game.scenes.getName("Crew Loadout")
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
+
+    if((loadoutItemToken == null) || (loadoutItemToken == undefined)){
+        console.log("loadout item not found")
+        return;
+    }
+
+    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
+    //// magazine attribute to fill the bars instead of hijacking hp
+    loadoutItemToken.update({actorData: {system: {derivedStats: {hp: {value: itemDocument.system.magazine.value}}}}})
+
+    Hooks.off("updateItem");
+}
