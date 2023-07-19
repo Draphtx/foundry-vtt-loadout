@@ -55,14 +55,15 @@ function findItemActor(itemDocument){
     }
 }
 
-// Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
+// Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags,
+//// and return the resulting tiles in order by preference weight
 function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
-    const applicableTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout).filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
-
+    const validTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout).filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
     // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
-    return applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+    return validTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 }
 
+// Find the available positions (if any) for the item in each tile
 function processTilePositions(validTiles, gridSize, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
@@ -74,7 +75,7 @@ function processTilePositions(validTiles, gridSize, itemOrientation){
             if(itemOrientation.size_x != itemOrientation.size_y){
                 tilePositions = getTilePositions(loadoutTile, gridSize, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
-                    itemOrientation.rotated = true
+                    itemOrientation.rotation = 90
                 }
             }
         }
@@ -126,62 +127,57 @@ function processTilePositions(validTiles, gridSize, itemOrientation){
     return [selectedTile, tilePositions]
 }
 
+// Place the itemActor token in the loadout scene
 async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene){
-    // Grab the first available slot
-    let dropPosition = validPositions[0]
-    var itemTokenDoc
-
-    if(itemOrientation.rotated == true){
-        console.log("creating rotated token")
-        itemTokenDoc = await selectedItemActor.getTokenDocument({
-            name: itemDocument.name,
-            x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_y, height: itemOrientation.size_x, 
-            rotation: 90, texture: {scaleX: itemOrientation.size_y, scaleY: itemOrientation.size_y}, 
-            flags: {
-                loadout: {
-                    "item": itemDocument.id
-                }}
-        })
-    } else {
-        itemTokenDoc = await selectedItemActor.getTokenDocument({
-            name: itemDocument.name,
-            x: dropPosition.x1, y: dropPosition.y1, width: itemOrientation.size_x, height: itemOrientation.size_y, 
-            flags: {
-                loadout: {
-                    "item": itemDocument.id
-                }}})
-    }
-    // TODO: Look at merging things into the itemTokenDoc so's we don't have to update the dropped token after the fact
-    const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
     
-    // If the item has an ammo magazine, assign a 'health' bar to represent the current magazine
-    // Similarly we should set the token's disposition to Red (poor), Yellow (standard), or 
-    //// Green (Excellent)
-    console.log(addedToken)
-    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
-        console.log("setting token health bars")
-        const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(
-            token => token.flags.loadout).find(
-                token => token.flags.loadout.item == itemDocument.id)
-        console.log(loadoutItemToken)
-        const dispositionMap = {"poor": -1, "standard": 0, "excellent": 1}
-        // TODO: Also set the Hover For Everyone name setting
-        loadoutItemToken.update({
-            disposition: dispositionMap[itemDocument.system.quality],
-            displayName: 30,
-            displayBars: 50, 
-            actorData: { 
-                system: { 
-                    equipped: selectedTile.flags.loadout.state,
-                    derivedStats: { 
-                        hp: { 
-                            max: itemDocument.system.magazine.max, 
-                            value: itemDocument.system.magazine.value
-                        }
-                    }
-                }
-            }})
+    // We will set the token's disposition value based on the item's quality
+    const dispositionMap = {
+        "poor": -1, 
+        "standard": 0, 
+        "excellent": 1
     }
+
+    // Set the basic configuration for the dropped token
+    let itemTokenSettings = {
+        name: itemDocument.name,
+        disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
+        displayName: 30,                                                    // Show nameplate when hovered by anyone
+        flags: {loadout: {"item": itemDocument.id}},                        // Link the token to the item by id
+        actorData: {system: {equipped: selectedTile.flags.loadout.state}},  // Set the item's equipped state based on the tile that it ended up in
+        x: validPositions[0].x1,                                            // First-available position's x coord
+        y: validPositions[0].y1,                                            // First-available position's y coord
+        rotation: itemOrientation.rotation                                  // Token's rotation
+    }
+
+    // Set scaling based on rotation
+    if(! itemOrientation.rotation == true){
+        itemTokenSettings.width = itemOrientation.size_x;
+        itemTokenSettings.height = itemOrientation.size_y;
+    } else {
+        itemTokenSettings.width = itemOrientation.size_y;
+        itemTokenSettings.height = itemOrientation.size_x;
+        itemTokenSettings.texture = {
+            scaleX: itemOrientation.size_y, 
+            scaleY: itemOrientation.size_y
+        }
+    }
+
+    // Set the token's 'health' bar to represent magazine contents, if available
+    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
+        itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
+        itemTokenSettings.actorData.system.derivedStats = {
+            hp: {
+                max: itemDocument.system.magazine.max,
+                value: itemDocument.system.magazine.value
+            }
+        }
+    }
+
+    // Define the tokenDocument settings for the itemActor
+    itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
+
+    // Create the token in the loadout scene
+    const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
 
     // Send a notification
     if(selectedTile.flags.loadout.state == "owned"){
@@ -221,7 +217,7 @@ async function addLoadoutItem(itemDocument) {
     const itemOrientation = {
         size_x: selectedItemActor.prototypeToken.width,
         size_y: selectedItemActor.prototypeToken.height,
-        rotated: false
+        rotation: 0
     }
 
     // Get tiles in the loadout scene that could _potentially_ hold the payload based purely on geometry
