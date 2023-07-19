@@ -64,7 +64,7 @@ function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
     return applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 }
 
-function processTilePositions(validTiles, itemOrientation){
+function processTilePositions(validTiles, gridSize, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
     for(const loadoutTile of validTiles){
@@ -73,7 +73,7 @@ function processTilePositions(validTiles, itemOrientation){
 
         if(! tilePositions.length){
             if(itemOrientation.size_x != itemOrientation.size_y){
-                tilePositions = getTilePositions(loadoutTile, itemOrientation.size_y, itemOrientation.size_x)
+                tilePositions = getTilePositions(loadoutTile, gridSize, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
                     itemOrientation.rotated = true
                 }
@@ -86,7 +86,7 @@ function processTilePositions(validTiles, itemOrientation){
     };
 
     // Get an array of possible positions for the item to land if nothing was blocking its space
-    function getTilePositions(loadoutTile, itemSizeL, itemSizeH){
+    function getTilePositions(loadoutTile, gridSize, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
@@ -124,10 +124,10 @@ function processTilePositions(validTiles, itemOrientation){
         }
         return itemPositions;
     }
-    return [selectedTile, itemPositions]
+    return [selectedTile, tilePositions]
 }
 
-function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor){
+async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene){
     // Grab the first available slot
     let dropPosition = validPositions[0]
     var itemTokenDoc
@@ -183,6 +183,19 @@ function placeItemActor(selectedTile, validPositions, itemOrientation, selectedI
                 }
             }})
     }
+
+    // Send a notification
+    if(selectedTile.flags.loadout.state == "owned"){
+        ui.notifications.warn(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadout.type + ", which is not carried"
+            )
+    } else {
+        ui.notifications.info(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadout.type
+            )
+    }
 }
 
 async function addLoadoutItem(itemDocument) {
@@ -216,7 +229,7 @@ async function addLoadoutItem(itemDocument) {
     const validTiles = findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation)
 
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
-    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
+    const [selectedTile, validPositions] = processTilePositions(validTiles, gridSize, itemOrientation)
 
     if(! validPositions.length){
         // Idk if this would be best-achieved by a preCreate where we do this before the item even exists, but in keeping with the mess of this script so far
@@ -272,20 +285,8 @@ async function addLoadoutItem(itemDocument) {
     }
 
     // Place the actor token in the loadout scene
-    placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor)
+    placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene)
 
-    // Send a notification
-    if(selectedTile.flags.loadout.state == "owned"){
-        ui.notifications.warn(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type + ", which is not carried"
-            )
-    } else {
-        ui.notifications.info(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type
-            )
-    }
 }
 
 Hooks.off("createItem");
