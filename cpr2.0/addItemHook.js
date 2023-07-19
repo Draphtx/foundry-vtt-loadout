@@ -1,5 +1,6 @@
 Hooks.on("createItem", (document, options, userid) => addLoadoutItem(document));
 
+// Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for NPCs
     if(itemDocument.parent.type != "character"){
@@ -26,6 +27,7 @@ function verifyItemSuitability(itemDocument){
         } else { 
             return true; 
         }
+    // Exclude some items that are not currently covered by the system
     } else if(itemDocument.type == "weapon"){
         itemIsExcluded = [
             "Martial Arts",
@@ -43,8 +45,8 @@ function verifyItemSuitability(itemDocument){
     }
 }
 
+// Get the weapon actor (sans quality conditions)
 function findItemActor(itemDocument){
-    // Get the weapon actor (sans quality conditions)
     let selectedItemActor = game.actors.getName(itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0])
     if(( selectedItemActor == null) || (selectedItemActor == undefined)){
         return false;
@@ -53,12 +55,9 @@ function findItemActor(itemDocument){
     }
 }
 
+// Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
-    // Get all loadout tiles from the loadout scene
-    loadoutTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout)
-
-    // filter loadout tiles to those owner by the character and those large enough to accommodate the item
-    const applicableTiles = loadoutTiles.filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
+    const applicableTiles = loadoutScene.tiles.filter(tile => tile.flags.loadout).filter(tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && tile.flags.loadout.owner == itemDocument.parent.id)
 
     // lambda to sort player's loadout tiles by weight (preference) 0-5, arbitrarily
     return applicableTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
