@@ -172,6 +172,8 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     }
 
     // Set the token's 'health' bar to represent magazine contents, if available
+    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
+    //// magazine attribute to fill the bars instead of hijacking hp
     if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
         itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
         itemTokenSettings.actorData = {
@@ -287,12 +289,17 @@ async function addLoadoutItem(itemDocument) {
         placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene)
     }
 
-    // Update the inventory item's equipped state based on where the token ended up
-    itemDocument.update({"system.equipped": selectedTile.flags.loadout.state})
+    // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
+    itemDocument.update({
+        "system.equipped": selectedTile.flags.loadout.state,
+        "flags.loadout" : {
+            linked: true
+        }
+    })
+
+    Hooks.off("createItem");
     return;
 }
-
-Hooks.off("createItem");
 
 // DELETE ITEM HOOK
 //// Responsible for removing weapon item representations from the loadout screen when the linked 
@@ -300,6 +307,10 @@ Hooks.off("createItem");
 Hooks.on("deleteItem", (document, options, userid) => removeLoadoutItem(document));
 
 function removeLoadoutItem(itemDocument) {
+    // Don't bother with items that have not been linked to a loadout token
+    if(! itemDocument.flags.loadout){
+        return;
+    }
     const loadoutScene = game.scenes.getName("Crew Loadout")
     const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
     
@@ -310,7 +321,9 @@ function removeLoadoutItem(itemDocument) {
         loadoutItemToken.delete();
         ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout")
     }
+    
     Hooks.off("deleteItem")
+    return;
 };
 
 // UPDATE ITEM HOOK
@@ -318,6 +331,11 @@ function removeLoadoutItem(itemDocument) {
 Hooks.on("updateItem", (document, options, userid) => updateLoadoutItem(document));
 
 async function updateLoadoutItem(itemDocument){
+    // Don't bother with items that have not been linked to a loadout token
+    if(! itemDocument.flags.loadout){
+        return;
+    }
+    
     // This function is only used to update the ammo bars of loadout weapons
     if(! itemDocument.system.magazine){
         return;
@@ -333,9 +351,9 @@ async function updateLoadoutItem(itemDocument){
         return;
     }
 
-    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
-    //// magazine attribute to fill the bars instead of hijacking hp
+    // Update the linked token's stats to reflect magazine changes
     loadoutItemToken.update({actorData: {system: {derivedStats: {hp: {value: itemDocument.system.magazine.value}}}}})
 
     Hooks.off("updateItem");
+    return;
 }
