@@ -1,0 +1,22 @@
+{
+  "name": "Loadouts",
+  "title": "Foundry VTT Loadouts",
+  "description": "Enables an inventory-based graphical loadout system.",
+  "authors": [
+    {
+      "name": "draphtx"
+    }
+  ],
+  "version": "2.1.0",
+  "minimumCoreVersion": "10.283",
+  "scripts": [
+    "scripts/loadoutHooks.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ]
+}
