@@ -18,5 +18,10 @@
       "name": "English",
       "path": "languages/en.json"
     }
-  ]
+  ],
+  "url": "#{URL}#",
+  "manifest": "#{MANIFEST}#",
+  "download": "#{DOWNLOAD}#",
+  "license": "LICENSE",
+  "readme": "README.md"
 }
