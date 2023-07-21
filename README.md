@@ -16,3 +16,6 @@ A basic algo identifies free spaces within a series of tiles that are assigned t
 
 ## Basic usage
 As this is in an alpha stage and many customization elements are still in development, directions for usage will come at a later time.
+
+Like it? Love it?
+https://www.buymeacoffee.com/draphtx
