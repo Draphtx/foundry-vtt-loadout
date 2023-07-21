@@ -7,7 +7,7 @@
       "name": "draphtx"
     }
   ],
-  "version": "2.1.0",
+  "version": "2.1.2",
   "minimumCoreVersion": "10.283",
   "scripts": [
     "scripts/loadoutHooks.js"
@@ -18,5 +18,10 @@
       "name": "English",
       "path": "languages/en.json"
     }
-  ]
+  ],
+  "url": "#{URL}#",
+  "manifest": "#{MANIFEST}#",
+  "download": "#{DOWNLOAD}#",
+  "license": "LICENSE",
+  "readme": "README.md"
 }
