@@ -19,6 +19,15 @@
       "path": "languages/en.json"
     }
   ],
+  "packs": [
+    {
+      "name": "loadouts-macros",
+      "label": "Loadouts Macros",
+      "path": "packs/macros/macros.db",
+      "type": "Macro",
+      "private": false
+    }
+  ],
   "url": "#{URL}#",
   "manifest": "#{MANIFEST}#",
   "download": "#{DOWNLOAD}#",
