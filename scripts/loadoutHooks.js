@@ -63,12 +63,12 @@ function findItemActor(itemDocument){
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
     const validTiles = loadoutScene.tiles.filter(
-        tile => tile.flags.loadout).filter(
+        tile => tile.flags.loadouts).filter(
             tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && 
-            tile.flags.loadout.owner == itemDocument.parent.id)
+            tile.flags.loadouts.owner == itemDocument.parent.id)
     
     // Return the valid tiles, sorted by preference weight
-    return validTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+    return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
 }
 
 // Find the available positions (if any) for the item in each tile
@@ -195,15 +195,15 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
 
     // Send a notification
-    if(selectedTile.flags.loadout.state == "owned"){
+    if(selectedTile.flags.loadouts.state == "owned"){
         ui.notifications.warn(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type + ", which is not carried"
+            selectedTile.flags.loadouts.type + ", which is not carried"
             )
     } else {
         ui.notifications.info(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type
+            selectedTile.flags.loadouts.type
             )
     }
 }
@@ -215,9 +215,16 @@ async function addLoadoutItem(itemDocument) {
         return;
     }
 
-    // Eventually to be configurable by the user, also probably some other checks to be done here (e.g. duplicate scene name)
-    const loadoutScene = game.scenes.getName("Crew Loadout")
-    
+    // Beginning support for multiple scenes. For now we'll just keep the one.
+    const loadoutScene = game.scenes.filter(scene => scene.flags.loadouts).filter(scene => scene.flags.loadouts.isLoadoutsScene == true)[0]
+    /* 
+    game.scenes.filter(
+        scene => scene.flags.loadouts).filter(
+            scene => scene.flags.loadouts.isLoadoutScene == true)[0].tiles.filter(
+                tile => tile.flags.loadout).filter(
+                    tile => tile.flags.loadout.owner == "7n9E1jrj7OrQiRI2")
+    */
+
     // The grid size basically becomes our unit of measurement for everything to follow
     const gridSize = loadoutScene.grid.size
 
@@ -264,10 +271,10 @@ async function addLoadoutItem(itemDocument) {
                },
                default: "drop"
         }).render(true);
-    } else if(selectedTile.flags.loadout.state == "owned"){
+    } else if(selectedTile.flags.loadouts.state == "owned"){
         const stashOnlyDialog = new Dialog({
             title: "Loadout Option",
-            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadout.type + "?</center>"),
+            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadouts.type + "?</center>"),
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -291,8 +298,8 @@ async function addLoadoutItem(itemDocument) {
 
     // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
     itemDocument.update({
-        "system.equipped": selectedTile.flags.loadout.state,
-        "flags.loadout" : {
+        "system.equipped": selectedTile.flags.loadouts.state,
+        "flags.loadouts" : {
             linked: true
         }
     })
@@ -308,11 +315,11 @@ Hooks.on("deleteItem", (document, options, userid) => removeLoadoutItem(document
 
 function removeLoadoutItem(itemDocument) {
     // Don't bother with items that have not been linked to a loadout token
-    if(! itemDocument.flags.loadout){
+    if(! itemDocument.flags.loadouts){
         return;
     }
     const loadoutScene = game.scenes.getName("Crew Loadout")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadouts).find(token => token.flags.loadouts.item == itemDocument.id)
     
     if(loadoutItemToken == undefined || loadoutItemToken == null) {
         ui.notifications.error("removeLoadoutItem: unable to find token related to " + itemDocument.id + " on loadout scene with id" + loadoutScene.id)
@@ -332,7 +339,7 @@ Hooks.on("updateItem", (document, options, userid) => updateLoadoutItem(document
 
 async function updateLoadoutItem(itemDocument){
     // Don't bother with items that have not been linked to a loadout token
-    if(! itemDocument.flags.loadout){
+    if(! itemDocument.flags.loadouts){
         return;
     }
     
@@ -344,7 +351,7 @@ async function updateLoadoutItem(itemDocument){
     }
 
     const loadoutScene = game.scenes.getName("Crew Loadout")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadout).find(token => token.flags.loadout.item == itemDocument.id)
+    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadouts).find(token => token.flags.loadouts.item == itemDocument.id)
 
     if((loadoutItemToken == null) || (loadoutItemToken == undefined)){
         console.log("loadout item not found")
