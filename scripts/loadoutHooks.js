@@ -218,11 +218,7 @@ async function addLoadoutItem(itemDocument) {
     // Beginning support for multiple scenes. For now we'll just keep the one.
     const loadoutScene = game.scenes.filter(scene => scene.flags.loadouts).filter(scene => scene.flags.loadouts.isLoadoutsScene == true)[0]
     /* 
-    game.scenes.filter(
-        scene => scene.flags.loadouts).filter(
-            scene => scene.flags.loadouts.isLoadoutScene == true)[0].tiles.filter(
-                tile => tile.flags.loadout).filter(
-                    tile => tile.flags.loadout.owner == "7n9E1jrj7OrQiRI2")
+    game.scenes.filter(scene => scene.flags.loadouts).filter(scene => scene.flags.loadouts.isLoadoutScene == true)[0].tiles.filter(tile => tile.flags.loadout).filter(tile => tile.flags.loadout.owner == "7n9E1jrj7OrQiRI2")
     */
 
     // The grid size basically becomes our unit of measurement for everything to follow
