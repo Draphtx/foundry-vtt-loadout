@@ -61,74 +61,84 @@ function findItemActor(itemDocument){
 }
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
-function findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation){
-    const validTiles = loadoutScene.tiles.filter(
-        tile => tile.flags.loadouts).filter(
-            tile => Math.max(tile.height/gridSize, tile.width/gridSize) >= Math.max(itemOrientation.size_x, itemOrientation.size_y) && 
-            tile.flags.loadouts.owner == itemDocument.parent.id)
+function findValidTiles(itemDocument, itemOrientation){
+    // Beginning support for multiple scenes. Because tile objects only exist as children of scenes (?),
+    //// I think we need to iterate here unfortunately.
+    const loadoutsScenes = game.scenes.filter(
+        scene => scene.flags.loadouts).filter(
+            scene => scene.flags.loadouts.isLoadoutsScene == true)
     
+    let validTiles = []
+    for(let loadoutsScene of loadoutsScenes){
+        loadoutsTiles = loadoutsScene.tiles.filter(
+            tile => tile.flags.loadout).filter(
+                tile => tile.flags.loadout.owner == itemDocument.parent.id && 
+                Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y))
+        validTiles = [...validTiles, ...loadoutsTiles]
+    }
+
     // Return the valid tiles, sorted by preference weight
-    return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
+    return validTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
 }
 
 // Find the available positions (if any) for the item in each tile
-function processTilePositions(validTiles, gridSize, itemOrientation){
+function processTilePositions(validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
-    for(const loadoutTile of validTiles){
-        console.log("checking tile " + loadoutTile.id)
-        tilePositions = getTilePositions(loadoutTile, gridSize, itemOrientation.size_x, itemOrientation.size_y)
+    for(const loadoutsTile of validTiles){
+        console.log("checking tile " + loadoutsTile.id)
+        tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_x, itemOrientation.size_y)
 
         if(! tilePositions.length){
             if(itemOrientation.size_x != itemOrientation.size_y){
-                tilePositions = getTilePositions(loadoutTile, gridSize, itemOrientation.size_y, itemOrientation.size_x)
+                tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
                     itemOrientation.rotation = 90
                 }
             }
         }
         if(tilePositions.length){
-            selectedTile = loadoutTile;
+            selectedTile = loadoutsTile;
             break;
         }
     };
 
     // Get an array of possible positions for the item to land if nothing was blocking its space
-    function getTilePositions(loadoutTile, gridSize, itemSizeL, itemSizeH){
+    function getTilePositions(loadoutsTile, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
-        for(let rowNum of Array(loadoutTile.height/gridSize).keys()){
-            for(let colNum of Array(loadoutTile.width/gridSize).keys()){
+        for(let rowNum of Array(loadoutsTile.height/loadoutsTile.parent.grid.size).keys()){
+            for(let colNum of Array(loadoutsTile.width/loadoutsTile.parent.grid.size).keys()){
                 let tilePosition = {
-                    "x1": loadoutTile.x + (colNum * gridSize), "y1": loadoutTile.y + (rowNum * gridSize), 
-                    "x2": loadoutTile.x + (colNum * gridSize) + (itemSizeL * gridSize), "y2": loadoutTile.y + (rowNum * gridSize) + (itemSizeH * gridSize),
+                    "x1": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size), "y1": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size), 
+                    "x2": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size) + (itemSizeL * loadoutsTile.parent.grid.size), "y2": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size) + (itemSizeH * loadoutsTile.parent.grid.size),
                 }
-                if((tilePosition.x1 + (itemSizeL * gridSize) <= loadoutTile.x + loadoutTile.width) && (tilePosition.y1 + (itemSizeH * gridSize) <= loadoutTile.y + loadoutTile.height)){
+                if((tilePosition.x1 + (itemSizeL * loadoutsTile.parent.grid.size) <= loadoutsTile.x + loadoutsTile.width) && (tilePosition.y1 + (itemSizeH * loadoutsTile.parent.grid.size) <= loadoutsTile.y + loadoutsTile.height)){
                     itemPositions.push(tilePosition)
                 }
             }
         }
         // Find any tokens that may already be over the tile's area
-        let blockingTokens = game.canvas.tokens.objects.children.filter(
-            t => t.x >= loadoutTile.x <= (loadoutTile.x + loadoutTile.width) && 
-                 t.y >= loadoutTile.y <=(loadoutTile.y + loadoutTile.height))
+        let blockingTokens = loadoutsTile.parent.tokens.filter(
+            t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
+                 t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
 
         // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
         // There is something going on here with the use of the myItemSize * gridSize that makes me have to do this extra step of determining 
         // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
         for(let blockingToken of blockingTokens){
                 // If the blockingToken is >= the new item, the item should use the filter but with Math.max
-            if(blockingToken.w >= itemSizeL * gridSize || blockingToken.h > itemSizeH * gridSize){
+            if(blockingToken.w >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.h > itemSizeH * loadoutsTile.parent.grid.size){
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * gridSize) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.max(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * gridSize) || blockingToken.y >= p.y2
+                    p.x1 >= Math.max(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.max(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             // If the blockingToken is < the new item, the item should use the filter but with Math.min
             } else {
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.min(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * gridSize) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.min(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * gridSize) || blockingToken.y >= p.y2
+                    p.x1 >= Math.min(blockingToken.x + blockingToken.w, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.min(blockingToken.y + blockingToken.h, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             }
         }
@@ -152,7 +162,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
         name: itemDocument.name,
         disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
         displayName: 30,                                                    // Show nameplate when hovered by anyone
-        flags: {loadout: {"item": itemDocument.id}},                        // Link the token to the item by id
+        flags: {loadouts: {"item": itemDocument.id}},                        // Link the token to the item by id
         x: validPositions[0].x1,                                            // First-available position's x coord
         y: validPositions[0].y1,                                            // First-available position's y coord
         rotation: itemOrientation.rotation                                  // Token's rotation
@@ -192,18 +202,18 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
 
     // Create the token in the loadout scene
-    const addedToken = await loadoutScene.createEmbeddedDocuments("Token", [itemTokenDoc])
+    const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
 
     // Send a notification
     if(selectedTile.flags.loadouts.state == "owned"){
         ui.notifications.warn(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type + ", which is not carried"
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
             )
     } else {
         ui.notifications.info(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
             )
     }
 }
@@ -214,15 +224,6 @@ async function addLoadoutItem(itemDocument) {
         console.log("item loadout suitability check failed")
         return;
     }
-
-    // Beginning support for multiple scenes. For now we'll just keep the one.
-    const loadoutScene = game.scenes.filter(scene => scene.flags.loadouts).filter(scene => scene.flags.loadouts.isLoadoutsScene == true)[0]
-    /* 
-    game.scenes.filter(scene => scene.flags.loadouts).filter(scene => scene.flags.loadouts.isLoadoutScene == true)[0].tiles.filter(tile => tile.flags.loadout).filter(tile => tile.flags.loadout.owner == "7n9E1jrj7OrQiRI2")
-    */
-
-    // The grid size basically becomes our unit of measurement for everything to follow
-    const gridSize = loadoutScene.grid.size
 
     // Try to locate an actor and token matching the item name
     selectedItemActor = findItemActor(itemDocument)
@@ -238,11 +239,11 @@ async function addLoadoutItem(itemDocument) {
         rotation: 0
     }
 
-    // Get tiles in the loadout scene that could _potentially_ hold the payload based purely on geometry
-    const validTiles = findValidTiles(itemDocument, loadoutScene, gridSize, itemOrientation)
+    // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
+    const validTiles = findValidTiles(itemDocument, itemOrientation)
 
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
-    const [selectedTile, validPositions] = processTilePositions(validTiles, gridSize, itemOrientation)
+    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
 
     // Account for some edge cases (like a player character having no available slots at all, or only slots 
     //// that are not currently carried) and/or create the token.
