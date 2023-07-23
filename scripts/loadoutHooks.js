@@ -120,6 +120,8 @@ function processTilePositions(validTiles, itemOrientation){
             }
         }
         // Find any tokens that may already be over the tile's area
+        // TODO: THIS IS WHERE POSITION DETECTION IS CURRENTLY BROKEN FOR MULTI-SCENE.
+        //// game.canvas.tokens.objects.children.filter works, but the below does NOT
         let blockingTokens = loadoutsTile.parent.tokens.filter(
             t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
                  t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
@@ -148,7 +150,7 @@ function processTilePositions(validTiles, itemOrientation){
 }
 
 // Place the itemActor token in the loadout scene
-async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene){
+async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
     
     // We will set the token's disposition value based on the item's quality
     const dispositionMap = {
@@ -208,12 +210,12 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     if(selectedTile.flags.loadouts.state == "owned"){
         ui.notifications.warn(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
+            selectedTile.flags.loadout.type + " in '" + selectedTile.parent.name + "', which is not carried"
             )
     } else {
         ui.notifications.info(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
+            selectedTile.flags.loadout.type + " in '" + selectedTile.parent.name + "'"
             )
     }
 }
@@ -263,15 +265,15 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
                 }
                },
                default: "drop"
         }).render(true);
-    } else if(selectedTile.flags.loadouts.state == "owned"){
+    } else if(selectedTile.flags.loadout.state == "owned"){
         const stashOnlyDialog = new Dialog({
             title: "Loadout Option",
-            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadouts.type + "?</center>"),
+            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadout.type + "?</center>"),
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -284,19 +286,19 @@ async function addLoadoutItem(itemDocument) {
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
                 }
                },
                default: "drop"
         }).render(true);
     } else {
-        placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument, loadoutScene)
+        placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
     }
 
     // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
     itemDocument.update({
-        "system.equipped": selectedTile.flags.loadouts.state,
-        "flags.loadouts" : {
+        "system.equipped": selectedTile.flags.loadout.state,
+        "flags.loadout" : {
             linked: true
         }
     })
