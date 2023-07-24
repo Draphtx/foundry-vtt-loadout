@@ -325,7 +325,7 @@ function removeLoadoutsItem(itemDocument) {
     var loadoutsItemToken = undefined
     for(const loadoutsScene in loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScene.id).tokens.contents.filter(
+            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
                 token => token.flags.loadouts).find(
                     token => token.flags.loadouts.item == itemDocument.id)
         if(loadoutsItemToken){
@@ -369,7 +369,7 @@ async function updateLoadoutsItem(itemDocument){
     var loadoutsItemToken = undefined
     for(const loadoutsScene in loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScene.id).tokens.contents.filter(
+            loadoutScenes[loadoutsScene].id).tokens.contents.filter(
                 token => token.flags.loadouts).find(
                     token => token.flags.loadouts.item == itemDocument.id)
         if(loadoutsItemToken){
