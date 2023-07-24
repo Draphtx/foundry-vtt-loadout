@@ -1,6 +1,6 @@
 # foundry-vtt-loadouts
 
-### 2.1.6a
+### 2.1.7a
 - Support for multiple Loadouts scenes
 - BREAKING: all flag references changed from `loadout` to `loadouts`
 

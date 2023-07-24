@@ -133,14 +133,14 @@ function processTilePositions(validTiles, itemOrientation){
                 // If the blockingToken is >= the new item, the item should use the filter but with Math.max
             if(blockingToken.width >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.height > itemSizeH * loadoutsTile.parent.grid.size){
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.max(blockingToken.x + blockingToken.width, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.max(blockingToken.y + blockingToken.height, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
+                    p.x1 >= Math.max(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.max(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             // If the blockingToken is < the new item, the item should use the filter but with Math.min
             } else {
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.min(blockingToken.x + blockingToken.width, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.min(blockingToken.y + blockingToken.height, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
+                    p.x1 >= Math.min(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.min(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             }
         }
