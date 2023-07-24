@@ -1,7 +1,7 @@
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
-Hooks.on("createItem", (document, options, userid) => addLoadoutItem(document));
+Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document));
 
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
@@ -71,14 +71,14 @@ function findValidTiles(itemDocument, itemOrientation){
     let validTiles = []
     for(let loadoutsScene of loadoutsScenes){
         loadoutsTiles = loadoutsScene.tiles.filter(
-            tile => tile.flags.loadout).filter(
-                tile => tile.flags.loadout.owner == itemDocument.parent.id && 
+            tile => tile.flags.loadouts).filter(
+                tile => tile.flags.loadouts.owner == itemDocument.parent.id && 
                 Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y))
         validTiles = [...validTiles, ...loadoutsTiles]
     }
 
     // Return the valid tiles, sorted by preference weight
-    return validTiles.sort((a, b) => a.flags.loadout.weight < b.flags.loadout.weight ? -1 : 1);
+    return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
 }
 
 // Find the available positions (if any) for the item in each tile
@@ -210,17 +210,17 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     if(selectedTile.flags.loadouts.state == "owned"){
         ui.notifications.warn(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type + " in '" + selectedTile.parent.name + "', which is not carried"
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
             )
     } else {
         ui.notifications.info(
             "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadout.type + " in '" + selectedTile.parent.name + "'"
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
             )
     }
 }
 
-async function addLoadoutItem(itemDocument) {
+async function addLoadoutsItem(itemDocument) {
     // Perform checks to ensure that the item is one we will try to handle using the loadout system
     if(! verifyItemSuitability(itemDocument)){
         console.log("item loadout suitability check failed")
@@ -230,7 +230,7 @@ async function addLoadoutItem(itemDocument) {
     // Try to locate an actor and token matching the item name
     selectedItemActor = findItemActor(itemDocument)
     if(! selectedItemActor){
-        ui.notifications.error("unable to find loadout token for " + itemDocument.name)
+        ui.notifications.error("unable to find loadouts token for " + itemDocument.name)
         return;
     }
 
@@ -251,8 +251,8 @@ async function addLoadoutItem(itemDocument) {
     //// that are not currently carried) and/or create the token.
     if(! validPositions.length){
         const noSpaceDialog = new Dialog({
-            title: "Loadout Option",
-            content: "<center><p>Unable to find an available Loadout slot.<br>Add " + itemDocument.name + " to inventory regardless?</p></center>",
+            title: "Loadouts Option",
+            content: "<center><p>Unable to find an available Loadouts slot.<br>Add " + itemDocument.name + " to inventory regardless?</p></center>",
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -270,10 +270,10 @@ async function addLoadoutItem(itemDocument) {
                },
                default: "drop"
         }).render(true);
-    } else if(selectedTile.flags.loadout.state == "owned"){
+    } else if(selectedTile.flags.loadouts.state == "owned"){
         const stashOnlyDialog = new Dialog({
-            title: "Loadout Option",
-            content: ("<center><p>Unable to find an available carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadout.type + "?</center>"),
+            title: "Loadouts Option",
+            content: ("<center><p>Unable to find an available Loadouts carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadouts.type + "?</center>"),
             buttons: {
                 drop: {
                  icon: '<i class="fas fa-check"></i>',
@@ -297,8 +297,8 @@ async function addLoadoutItem(itemDocument) {
 
     // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
     itemDocument.update({
-        "system.equipped": selectedTile.flags.loadout.state,
-        "flags.loadout" : {
+        "system.equipped": selectedTile.flags.loadouts.state,
+        "flags.loadouts" : {
             linked: true
         }
     })
@@ -310,21 +310,34 @@ async function addLoadoutItem(itemDocument) {
 // DELETE ITEM HOOK
 //// Responsible for removing weapon item representations from the loadout screen when the linked 
 //// item is removed from the player's inventory.
-Hooks.on("deleteItem", (document, options, userid) => removeLoadoutItem(document));
+Hooks.on("deleteItem", (document, options, userid) => removeLoadoutsItem(document));
 
-function removeLoadoutItem(itemDocument) {
+function removeLoadoutsItem(itemDocument) {
     // Don't bother with items that have not been linked to a loadout token
     if(! itemDocument.flags.loadouts){
         return;
     }
-    const loadoutScene = game.scenes.getName("Crew Loadout")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadouts).find(token => token.flags.loadouts.item == itemDocument.id)
+    // const loadoutScene = game.scenes.getName("Crew Loadout")
+    const loadoutsScenes = game.scenes.filter(
+        scene => scene.flags.loadouts).filter(
+            scene => scene.flags.loadouts.isLoadoutsScene == true)
     
-    if(loadoutItemToken == undefined || loadoutItemToken == null) {
-        ui.notifications.error("removeLoadoutItem: unable to find token related to " + itemDocument.id + " on loadout scene with id" + loadoutScene.id)
+    var loadoutsItemToken = undefined
+    for(const loadoutsScene in loadoutsScenes){
+        loadoutsItemToken = game.scenes.get(
+            loadoutsScene.id).tokens.contents.filter(
+                token => token.flags.loadouts).find(
+                    token => token.flags.loadouts.item == itemDocument.id)
+        if(loadoutsItemToken){
+            break;
+        }
+    }
+    
+    if(loadoutsItemToken == undefined || loadoutsItemToken == null) {
+        ui.notifications.warn("unable to find Loadouts token related to " + itemDocument.id + " on any Loadouts scene")
         return;
     } else {
-        loadoutItemToken.delete();
+        loadoutsItemToken.delete();
         ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout")
     }
     
@@ -334,9 +347,9 @@ function removeLoadoutItem(itemDocument) {
 
 // UPDATE ITEM HOOK
 //// Updates item tokens' 'health' bar when a weapon magazine changes states
-Hooks.on("updateItem", (document, options, userid) => updateLoadoutItem(document));
+Hooks.on("updateItem", (document, options, userid) => updateLoadoutsItem(document));
 
-async function updateLoadoutItem(itemDocument){
+async function updateLoadoutsItem(itemDocument){
     // Don't bother with items that have not been linked to a loadout token
     if(! itemDocument.flags.loadouts){
         return;
@@ -349,16 +362,34 @@ async function updateLoadoutItem(itemDocument){
         return;
     }
 
-    const loadoutScene = game.scenes.getName("Crew Loadout")
-    const loadoutItemToken = game.scenes.get(loadoutScene.id).tokens.contents.filter(token => token.flags.loadouts).find(token => token.flags.loadouts.item == itemDocument.id)
+    const loadoutsScenes = game.scenes.filter(
+        scene => scene.flags.loadouts).filter(
+            scene => scene.flags.loadouts.isLoadoutsScene == true)
+    
+    var loadoutsItemToken = undefined
+    for(const loadoutsScene in loadoutsScenes){
+        loadoutsItemToken = game.scenes.get(
+            loadoutsScene.id).tokens.contents.filter(
+                token => token.flags.loadouts).find(
+                    token => token.flags.loadouts.item == itemDocument.id)
+        if(loadoutsItemToken){
+            break;
+        }
+    }
 
-    if((loadoutItemToken == null) || (loadoutItemToken == undefined)){
-        console.log("loadout item not found")
+    if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
+        console.log("Loadouts item not found; cannot update magazine")
         return;
     }
 
     // Update the linked token's stats to reflect magazine changes
-    loadoutItemToken.update({actorData: {system: {derivedStats: {hp: {value: itemDocument.system.magazine.value}}}}})
+    loadoutsItemToken.update(
+        {actorData: {
+            system: {
+                derivedStats: {
+                    hp: {
+                        value: itemDocument.system.magazine.value
+                    }}}}})
 
     Hooks.off("updateItem");
     return;
