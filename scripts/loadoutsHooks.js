@@ -1,3 +1,5 @@
+console.log('%c————— Foundry VTT Loadouts Initialized —————', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
+
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
