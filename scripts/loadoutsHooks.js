@@ -131,16 +131,16 @@ function processTilePositions(validTiles, itemOrientation){
         // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
         for(let blockingToken of blockingTokens){
                 // If the blockingToken is >= the new item, the item should use the filter but with Math.max
-            if(blockingToken.object.w >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.object.h > itemSizeH * loadoutsTile.parent.grid.size){
+            if(blockingToken.width >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.height > itemSizeH * loadoutsTile.parent.grid.size){
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.max(blockingToken.object.x + blockingToken.object.w, blockingToken.object.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.object.x >= p.x2 || 
-                    p.y1 >= Math.max(blockingToken.object.y + blockingToken.object.h, blockingToken.object.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.object.y >= p.y2
+                    p.x1 >= Math.max(blockingToken.x + blockingToken.width, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.max(blockingToken.y + blockingToken.height, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             // If the blockingToken is < the new item, the item should use the filter but with Math.min
             } else {
                 itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.min(blockingToken.object.x + blockingToken.object.w, blockingToken.object.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.object.x >= p.x2 || 
-                    p.y1 >= Math.min(blockingToken.object.y + blockingToken.object.h, blockingToken.object.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.object.y >= p.y2
+                    p.x1 >= Math.min(blockingToken.x + blockingToken.width, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.min(blockingToken.y + blockingToken.height, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
                     )
             }
         }
@@ -369,7 +369,7 @@ async function updateLoadoutsItem(itemDocument){
     var loadoutsItemToken = undefined
     for(const loadoutsScene in loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutScenes[loadoutsScene].id).tokens.contents.filter(
+            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
                 token => token.flags.loadouts).find(
                     token => token.flags.loadouts.item == itemDocument.id)
         if(loadoutsItemToken){
