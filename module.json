@@ -4,13 +4,15 @@
   "description": "Enables an inventory-based graphical loadout system.",
   "authors": [
     {
-      "name": "draphtx"
+      "name": "draphtx",
+      "email": "draphtx@gmail.com",
+      "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
   "version": "2.1.4",
   "minimumCoreVersion": "10.283",
   "scripts": [
-    "scripts/loadoutHooks.js"
+    "scripts/loadoutsHooks.js"
   ],
   "languages": [
     {
@@ -32,5 +34,9 @@
   "manifest": "#{MANIFEST}#",
   "download": "#{DOWNLOAD}#",
   "license": "LICENSE",
-  "readme": "README.md"
+  "readme": "README.md",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  }
 }
