@@ -1,20 +1,5 @@
 console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
 
-function loadoutsConsoleMessage(message, severity){
-    const severityColorMap = {
-        "success": "#72e8c4",
-        "debug": "#2F4858",
-        "info": "#33658A",
-        "warn": "#F6AE2D",
-        "error": "#C20114"
-    }
-    console.log(
-        '%c▞▖Loadouts %c' + message, 
-        'color:#FFFFFF; background:#72e8c4; padding:3px; border-radius:5px; font-size:12px',
-        'color:#FFFFFF; background:' + severityColorMap[severity] + '; padding:3px; border-radius:5px; font-size:12px'
-      );
-}
-
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
@@ -85,7 +70,7 @@ function findValidTiles(itemDocument, itemOrientation){
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
     if((loadoutsScenes == null) || (loadoutsScenes == undefined)){
-        loadoutsConsoleMessage("unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.", "warn")
+        console.warn("▞▖Loadouts: unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.")
         return;
     }
     
@@ -293,23 +278,23 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
             selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
             )
     }
-    loadoutsConsoleMessage(itemDocument.parent.name + "'s " + itemDocument.name + ":" +itemDocument.id + " was linked to a Loadouts token", "success")
+    console.info("▞▖Loadouts: " + itemDocument.parent.name + "'s " + itemDocument.name + ":" +itemDocument.id + " was linked to a Loadouts token")
 }
 
 async function addLoadoutsItem(itemDocument) {
     // Begin logging the transaction
-    loadoutsConsoleMessage(itemDocument.parent.name + " added " + itemDocument.name + " to their inventory", "info")
+    console.debug("▞▖Loadouts: " + itemDocument.parent.name + " added " + itemDocument.name + " to their inventory")
     
     // Perform checks to ensure that the item is one we will try to handle using the loadout system
     if(! verifyItemSuitability(itemDocument)){
-        loadoutsConsoleMessage("item " + itemDocument.name + " discarded by suitability checks", "debug")
+        console.debug("▞▖Loadouts: item " + itemDocument.name + " discarded by suitability checks")
         return;
     }
 
     // Try to locate an actor and token matching the item name
     selectedItemActor = findItemActor(itemDocument)
     if(! selectedItemActor){
-        loadoutsConsoleMessage("unable to find Loadouts token for " + itemDocument.name + ". Item will not be linked to a Loadouts token", "warn")
+        console.warn("▞▖Loadouts: unable to find Loadouts token for " + itemDocument.name + ". Item will not be linked to a Loadouts token")
         return;
     }
 
@@ -403,7 +388,7 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
-        console.log("Loadouts item not found; cannot update magazine")
+        console.warn("▞▖Loadouts: Loadouts item not found; cannot update magazine")
         return;
     }
 
