@@ -1,4 +1,4 @@
-console.log('%c▚  Foundry VTT Loadouts Initialized ▚', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
+console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
 
 function loadoutsConsoleMessage(message, severity){
     const severityColorMap = {
@@ -8,7 +8,11 @@ function loadoutsConsoleMessage(message, severity){
         "warn": "#F6AE2D",
         "error": "#C20114"
     }
-    console.log("%cLoadouts: %c" + message, 'color:#72e8c4; font-size:12px', "color:" + severityColorMap[severity] +"; font-size:12px");
+    console.log(
+        '%c▞▖Loadouts %c' + message, 
+        'color:#FFFFFF; background:#72e8c4; padding:3px; border-radius:5px; font-size:12px',
+        'color:#FFFFFF; background:' + severityColorMap[severity] + '; padding:3px; border-radius:5px; font-size:12px'
+      );
 }
 
 // CREATE ITEM HOOK
