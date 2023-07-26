@@ -388,7 +388,7 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
-        console.warn("▞▖Loadouts: Loadouts item not found; cannot update magazine")
+        console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
     }
 
@@ -400,6 +400,19 @@ async function updateLoadoutsItem(itemDocument){
                     hp: {
                         value: itemDocument.system.magazine.value
                     }}}}})
+    
+    // Update the linked token's overlay if the item is equipped
+    statusIconMap = {
+        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "carried": "",
+        "owned": ""
+    }
+
+    if(loadoutsItem.system.equipped){
+        loadoutsItemToken.update({
+            overlayEffect: statusIconMap[itemDocument.system.equipped]
+        })
+    }
 
     Hooks.off("updateItem");
     return;
