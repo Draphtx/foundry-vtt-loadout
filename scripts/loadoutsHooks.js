@@ -226,12 +226,9 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     }
 
     // Set scaling based on rotation
-    if(! itemOrientation.rotation == true){
-        itemTokenSettings.width = itemOrientation.size_x;
-        itemTokenSettings.height = itemOrientation.size_y;
-    } else {
-        itemTokenSettings.width = itemOrientation.size_y;
-        itemTokenSettings.height = itemOrientation.size_x;
+    itemTokenSettings.width = itemOrientation.size_x;
+    itemTokenSettings.height = itemOrientation.size_y;
+    if(itemOrientation.rotation == true)
         itemTokenSettings.texture = {
             scaleX: itemOrientation.size_y, 
             scaleY: itemOrientation.size_y
