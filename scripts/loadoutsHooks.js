@@ -209,6 +209,11 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
         "poor": -1, 
         "standard": 0, 
         "excellent": 1
+    }    
+    const statusIconMap = {
+        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "carried": "",
+        "owned": ""
     }
 
     // Set the basic configuration for the dropped token
@@ -250,6 +255,11 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
                 }
             }
         }
+    }
+
+    // Set equipped state overlays where desired
+    if(itemDocument.system.equipped){
+        itemTokenSettings.overlayEffect = statusIconMap[itemDocument.system.equipped]
     }
 
     // Define the tokenDocument settings for the itemActor
@@ -368,8 +378,6 @@ async function updateLoadoutsItem(itemDocument){
     // This function is only used to update the ammo bars of loadout weapons
     if(! itemDocument.system.magazine){
         return;
-    } else if(itemDocument.system.magazine.max == 0){
-        return;
     }
 
     const loadoutsScenes = game.scenes.filter(
@@ -393,13 +401,15 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     // Update the linked token's stats to reflect magazine changes
-    loadoutsItemToken.update(
-        {actorData: {
-            system: {
-                derivedStats: {
-                    hp: {
-                        value: itemDocument.system.magazine.value
-                    }}}}})
+    if(itemDocument.system.magazine.max != 0){
+        loadoutsItemToken.update(
+            {actorData: {
+                system: {
+                    derivedStats: {
+                        hp: {
+                            value: itemDocument.system.magazine.value
+                        }}}}})
+    }
     
     // Update the linked token's overlay if the item is equipped
     statusIconMap = {
@@ -407,8 +417,8 @@ async function updateLoadoutsItem(itemDocument){
         "carried": "",
         "owned": ""
     }
-
-    if(loadoutsItem.system.equipped){
+    console.log("changing equip status")
+    if(itemDocument.system.equipped){
         loadoutsItemToken.update({
             overlayEffect: statusIconMap[itemDocument.system.equipped]
         })
