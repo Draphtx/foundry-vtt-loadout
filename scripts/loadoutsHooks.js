@@ -327,7 +327,7 @@ function removeLoadoutsItem(itemDocument) {
     if(! itemDocument.flags.loadouts){
         return;
     }
-    // const loadoutScene = game.scenes.getName("Crew Loadout")
+
     const loadoutsScenes = game.scenes.filter(
         scene => scene.flags.loadouts).filter(
             scene => scene.flags.loadouts.isLoadoutsScene == true)
@@ -348,7 +348,7 @@ function removeLoadoutsItem(itemDocument) {
         return;
     } else {
         loadoutsItemToken.delete();
-        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout")
+        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout in '" + loadoutsItemToken.parent.name + "'")
     }
     
     Hooks.off("deleteItem")
