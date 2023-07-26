@@ -1,5 +1,8 @@
 # foundry-vtt-loadouts
 
+### 2.1.8b
+- Bundle artwork folder with release (needed for overlays)
+
 ### 2.1.8a
 - Additional error-catching
 - Improved console & ui logging
