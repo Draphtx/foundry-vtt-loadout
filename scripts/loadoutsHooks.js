@@ -63,8 +63,6 @@ function findItemActor(itemDocument){
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, itemOrientation){
-    // Beginning support for multiple scenes. Because tile objects only exist as children of scenes (?),
-    //// I think we need to iterate here unfortunately.
     const loadoutsScenes = game.scenes.filter(
         scene => scene.flags.loadouts).filter(
             scene => scene.flags.loadouts.isLoadoutsScene == true)
