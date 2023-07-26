@@ -1,3 +1,5 @@
+console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
+
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
@@ -40,7 +42,6 @@ function verifyItemSuitability(itemDocument){
             "Thrown Weapon"
         ].includes(itemDocument.name)
         if(itemIsExcluded){
-            console.log("CPR Weapon item explicitly excluded from loadout")
             return false;
         } else { 
             return true; 
@@ -68,6 +69,11 @@ function findValidTiles(itemDocument, itemOrientation){
         scene => scene.flags.loadouts).filter(
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
+    if((loadoutsScenes == null) || (loadoutsScenes == undefined)){
+        console.warn("▞▖Loadouts: unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.")
+        return;
+    }
+    
     let validTiles = []
     for(let loadoutsScene of loadoutsScenes){
         loadoutsTiles = loadoutsScene.tiles.filter(
@@ -86,7 +92,6 @@ function processTilePositions(validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
     for(const loadoutsTile of validTiles){
-        console.log("checking tile " + loadoutsTile.id)
         tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_x, itemOrientation.size_y)
 
         if(! tilePositions.length){
@@ -120,8 +125,6 @@ function processTilePositions(validTiles, itemOrientation){
             }
         }
         // Find any tokens that may already be over the tile's area
-        // TODO: THIS IS WHERE POSITION DETECTION IS CURRENTLY BROKEN FOR MULTI-SCENE.
-        //// game.canvas.tokens.objects.children.filter works, but the below does NOT
         let blockingTokens = loadoutsTile.parent.tokens.filter(
             t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
                  t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
@@ -149,106 +152,8 @@ function processTilePositions(validTiles, itemOrientation){
     return [selectedTile, tilePositions]
 }
 
-// Place the itemActor token in the loadout scene
-async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
-    
-    // We will set the token's disposition value based on the item's quality
-    const dispositionMap = {
-        "poor": -1, 
-        "standard": 0, 
-        "excellent": 1
-    }
-
-    // Set the basic configuration for the dropped token
-    let itemTokenSettings = {
-        name: itemDocument.name,
-        disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
-        displayName: 30,                                                    // Show nameplate when hovered by anyone
-        flags: {loadouts: {"item": itemDocument.id}},                        // Link the token to the item by id
-        x: validPositions[0].x1,                                            // First-available position's x coord
-        y: validPositions[0].y1,                                            // First-available position's y coord
-        rotation: itemOrientation.rotation                                  // Token's rotation
-    }
-
-    // Set scaling based on rotation
-    if(! itemOrientation.rotation == true){
-        itemTokenSettings.width = itemOrientation.size_x;
-        itemTokenSettings.height = itemOrientation.size_y;
-    } else {
-        itemTokenSettings.width = itemOrientation.size_y;
-        itemTokenSettings.height = itemOrientation.size_x;
-        itemTokenSettings.texture = {
-            scaleX: itemOrientation.size_y, 
-            scaleY: itemOrientation.size_y
-        }
-    }
-
-    // Set the token's 'health' bar to represent magazine contents, if available
-    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
-    //// magazine attribute to fill the bars instead of hijacking hp
-    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
-        itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
-        itemTokenSettings.actorData = {
-            system: {
-                derivedStats: {
-                    hp: {
-                        max: itemDocument.system.magazine.max,
-                        value: itemDocument.system.magazine.value
-                    }
-                }
-            }
-        }
-    }
-
-    // Define the tokenDocument settings for the itemActor
-    itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
-
-    // Create the token in the loadout scene
-    const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
-
-    // Send a notification
-    if(selectedTile.flags.loadouts.state == "owned"){
-        ui.notifications.warn(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
-            )
-    } else {
-        ui.notifications.info(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
-            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
-            )
-    }
-}
-
-async function addLoadoutsItem(itemDocument) {
-    // Perform checks to ensure that the item is one we will try to handle using the loadout system
-    if(! verifyItemSuitability(itemDocument)){
-        console.log("item loadout suitability check failed")
-        return;
-    }
-
-    // Try to locate an actor and token matching the item name
-    selectedItemActor = findItemActor(itemDocument)
-    if(! selectedItemActor){
-        ui.notifications.error("unable to find loadouts token for " + itemDocument.name)
-        return;
-    }
-
-    // Item token size and rotation boolean
-    const itemOrientation = {
-        size_x: selectedItemActor.prototypeToken.width,
-        size_y: selectedItemActor.prototypeToken.height,
-        rotation: 0
-    }
-
-    // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
-    const validTiles = findValidTiles(itemDocument, itemOrientation)
-
-    // Process the preference-sorted array of tiles until we find one that can accommodate the item token
-    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
-
-    // Account for some edge cases (like a player character having no available slots at all, or only slots 
-    //// that are not currently carried) and/or create the token.
+// Before placing the itemToken, check for some edge cases where we may need user input
+function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
     if(! validPositions.length){
         const noSpaceDialog = new Dialog({
             title: "Loadouts Option",
@@ -293,7 +198,75 @@ async function addLoadoutsItem(itemDocument) {
         }).render(true);
     } else {
         placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
+    }    
+}
+
+// Place the itemActor token in the loadout scene
+async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
+    
+    // We will set the token's disposition value based on the item's quality
+    const dispositionMap = {
+        "poor": -1, 
+        "standard": 0, 
+        "excellent": 1
+    }    
+    const statusIconMap = {
+        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "carried": "",
+        "owned": ""
     }
+
+    // Set the basic configuration for the dropped token
+    let itemTokenSettings = {
+        name: itemDocument.name,
+        disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
+        displayName: 30,                                                    // Show nameplate when hovered by anyone
+        flags: {loadouts: {"item": itemDocument.id}},                       // Link the token to the item by id
+        x: validPositions[0].x1,                                            // First-available position's x coord
+        y: validPositions[0].y1,                                            // First-available position's y coord
+        rotation: itemOrientation.rotation                                  // Token's rotation
+    }
+
+    // Set scaling based on rotation
+    if(! itemOrientation.rotation == true){
+        itemTokenSettings.width = itemOrientation.size_x;
+        itemTokenSettings.height = itemOrientation.size_y;
+    } else {
+        itemTokenSettings.width = itemOrientation.size_y;
+        itemTokenSettings.height = itemOrientation.size_x;
+        itemTokenSettings.texture = {
+            scaleX: itemOrientation.size_y, 
+            scaleY: itemOrientation.size_y
+        }
+    }
+
+    // Set the token's 'health' bar to represent magazine contents, if available
+    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
+    //// magazine attribute to fill the bars instead of hijacking hp
+    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
+        itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
+        itemTokenSettings.actorData = {
+            system: {
+                derivedStats: {
+                    hp: {
+                        max: itemDocument.system.magazine.max,
+                        value: itemDocument.system.magazine.value
+                    }
+                }
+            }
+        }
+    }
+
+    // Set equipped state overlays where desired
+    if(itemDocument.system.equipped){
+        itemTokenSettings.overlayEffect = statusIconMap[itemDocument.system.equipped]
+    }
+
+    // Define the tokenDocument settings for the itemActor
+    itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
+
+    // Create the token in the loadout scene
+    const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
 
     // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
     itemDocument.update({
@@ -302,6 +275,53 @@ async function addLoadoutsItem(itemDocument) {
             linked: true
         }
     })
+
+    // Send notifications
+    if(selectedTile.flags.loadouts.state == "owned"){
+        ui.notifications.warn(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
+            )
+    } else {
+        ui.notifications.info(
+            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
+            )
+    }
+    console.info("▞▖Loadouts: " + itemDocument.parent.name + "'s " + itemDocument.name + ":" +itemDocument.id + " was linked to a Loadouts token")
+}
+
+async function addLoadoutsItem(itemDocument) {
+    // Begin logging the transaction
+    console.debug("▞▖Loadouts: " + itemDocument.parent.name + " added " + itemDocument.name + " to their inventory")
+    
+    // Perform checks to ensure that the item is one we will try to handle using the loadout system
+    if(! verifyItemSuitability(itemDocument)){
+        console.debug("▞▖Loadouts: item " + itemDocument.name + " discarded by suitability checks")
+        return;
+    }
+
+    // Try to locate an actor and token matching the item name
+    selectedItemActor = findItemActor(itemDocument)
+    if(! selectedItemActor){
+        console.warn("▞▖Loadouts: unable to find Loadouts token for " + itemDocument.name + ". Item will not be linked to a Loadouts token")
+        return;
+    }
+
+    // Item token size and rotation boolean
+    const itemOrientation = {
+        size_x: selectedItemActor.prototypeToken.width,
+        size_y: selectedItemActor.prototypeToken.height,
+        rotation: 0
+    }
+
+    // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
+    const validTiles = findValidTiles(itemDocument, itemOrientation)
+
+    // Process the preference-sorted array of tiles until we find one that can accommodate the item token
+    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
+
+    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
 
     Hooks.off("createItem");
     return;
@@ -317,7 +337,7 @@ function removeLoadoutsItem(itemDocument) {
     if(! itemDocument.flags.loadouts){
         return;
     }
-    // const loadoutScene = game.scenes.getName("Crew Loadout")
+
     const loadoutsScenes = game.scenes.filter(
         scene => scene.flags.loadouts).filter(
             scene => scene.flags.loadouts.isLoadoutsScene == true)
@@ -338,7 +358,7 @@ function removeLoadoutsItem(itemDocument) {
         return;
     } else {
         loadoutsItemToken.delete();
-        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout")
+        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout in '" + loadoutsItemToken.parent.name + "'")
     }
     
     Hooks.off("deleteItem")
@@ -358,8 +378,6 @@ async function updateLoadoutsItem(itemDocument){
     // This function is only used to update the ammo bars of loadout weapons
     if(! itemDocument.system.magazine){
         return;
-    } else if(itemDocument.system.magazine.max == 0){
-        return;
     }
 
     const loadoutsScenes = game.scenes.filter(
@@ -378,18 +396,33 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
-        console.log("Loadouts item not found; cannot update magazine")
+        console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
     }
 
     // Update the linked token's stats to reflect magazine changes
-    loadoutsItemToken.update(
-        {actorData: {
-            system: {
-                derivedStats: {
-                    hp: {
-                        value: itemDocument.system.magazine.value
-                    }}}}})
+    if(itemDocument.system.magazine.max != 0){
+        loadoutsItemToken.update(
+            {actorData: {
+                system: {
+                    derivedStats: {
+                        hp: {
+                            value: itemDocument.system.magazine.value
+                        }}}}})
+    }
+    
+    // Update the linked token's overlay if the item is equipped
+    statusIconMap = {
+        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "carried": "",
+        "owned": ""
+    }
+    console.log("changing equip status")
+    if(itemDocument.system.equipped){
+        loadoutsItemToken.update({
+            overlayEffect: statusIconMap[itemDocument.system.equipped]
+        })
+    }
 
     Hooks.off("updateItem");
     return;

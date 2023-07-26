@@ -9,8 +9,9 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.1.7",
+  "version": "2.1.8",
   "minimumCoreVersion": "10.283",
+  "system": "cyberpunk-red-core",
   "scripts": [
     "scripts/loadoutsHooks.js"
   ],

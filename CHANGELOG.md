@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.1.8a
+- Additional error-catching
+- Improved console & ui logging
+- Basic equipped item overlay
+
 ### 2.1.7a
 - Support for multiple Loadouts scenes
 - BREAKING: all flag references changed from `loadout` to `loadouts`
