@@ -9,7 +9,7 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.1.9",
+  "version": "2.1.10",
   "minimumCoreVersion": "10.283",
   "system": "cyberpunk-red-core",
   "scripts": [
@@ -29,6 +29,16 @@
       "path": "packs/macros/macros.db",
       "type": "Macro",
       "private": false
+    }
+  ],
+  "media": [
+    {
+        "type": "cover",
+        "link": "https://raw.githubusercontent.com/Draphtx/foundry-vtt-loadouts/continuous/artwork/module/loadouts-cover.png"
+    },
+    {
+        "type": "screenshot",
+        "link": "https://raw.githubusercontent.com/Draphtx/foundry-vtt-loadouts/continuous/artwork/module/screenshot-v2.1.9a.png"
     }
   ],
   "url": "#{URL}#",
