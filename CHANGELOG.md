@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.1.9a
+- Updated equipped overlay for better quality & visibility
+- Added basic token movement hook to update item's equipped state based on landing tile when moved by a user
+- TODO: Try to make this a preUpdateItem hook so that the item cannot be moved unless the checks pass?
+
 ### 2.1.8b
 - Bundle artwork folder with release (needed for overlays)
 
