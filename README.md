@@ -15,7 +15,11 @@ When applicable items (CPR weapons & grenades, currently) are added to a player'
 A basic algo identifies free spaces within a series of tiles that are assigned to the player and attempts to place a token representing the item into a preferred 'slot'. As the player's slots fill up, items will be placed in ever-less-desirable locations, with the result that eventually a player must run out of physical carrying space.
 
 ## Basic usage
-As this is in an alpha stage and many customization elements are still in development, directions for usage will come at a later time.
+_As this is in an alpha stage and many customization elements are still in development, these directions may change quickly._
+
+1. Create a scene to use for your Loadouts (in the future the module will include a test scene) and populate it with tiles representing the characters' 'slots.'
+2. Use the included macro `setLoadoutsScene` to flag the current scene as a Loadouts scene.
+3. Select one or more tiles and use the included macro `setLoadoutsTiles` to configure them as Loadouts tiles.
 
 Like it? Love it?
 https://www.buymeacoffee.com/draphtx
