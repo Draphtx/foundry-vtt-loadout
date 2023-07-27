@@ -1,5 +1,8 @@
 # foundry-vtt-loadouts
 
+### 2.1.10a
+- Module facelift: cover and screenshots added to module manifest
+
 ### 2.1.9a
 - Updated equipped overlay for better quality & visibility
 - Added basic token movement hook to update item's equipped state based on landing tile when moved by a user

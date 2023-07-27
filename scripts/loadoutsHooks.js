@@ -482,7 +482,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
     if(selectedTile.flags.loadouts.state == linkedItem.system.equipped){
     } else {
         linkedItem.update({system:{equipped: selectedTile.flags.loadouts.state}})
-        ui.notifications.info("Loadouts: set equipped state to reflect new tile location")
+        ui.notifications.info("Loadouts: set " + linkedItem.name + "equipped state to " + selectedTile.flags.loadouts.state + " to reflect new tile location.")
     }
     
     Hooks.off("updateToken")
