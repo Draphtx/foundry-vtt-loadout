@@ -1,15 +1,5 @@
 Hooks.once("init", function () {
 
-    // Enable or disable Loadouts functionality
-    game.settings.register("Loadouts", "loadouts-enabled", {
-        name: "Enable Loadouts",
-        hint: "Turns Loadouts management on and off",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
-    });
-
     // Display itemToken names on hover
     game.settings.register("Loadouts", "loadouts-token-names", {
         name: "Show Token Nameplates",
@@ -17,7 +7,7 @@ Hooks.once("init", function () {
         scope: "world",
         config: true,
         default: true,
-        type: Boolean,
+        type: Boolean
     });
 
     // Magazine counters
@@ -27,17 +17,62 @@ Hooks.once("init", function () {
         scope: "world",
         config: true,
         default: true,
-        type: Boolean,
+        type: Boolean
+    });
+
+    game.settings.register("Loadouts", "loadouts-teleport-to-stash", {
+        name: "Enable Remote Stash",
+        hint: "When a 'carried' slot cannot be found, allow the player to 'teleport' the item back to an uncarried stash",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
+
+    game.settings.register("Loadouts", "loadouts-full-add-anyway", {
+        name: "Enable Remote Stash",
+        hint: "When no slots are available, allow the player to add the item to their inventory anyway",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
     });
 
     // Enable for mooks
     game.settings.register("Loadouts", "loadouts-enable-mooks", {
         name: "Enable Mook Support",
-        hint: "Manage mook inventories as well, where applicable",
+        hint: "Manage mook inventories as well, where tiles are provided",
         scope: "world",
         config: true,
         default: false,
-        type: Boolean,
+        type: Boolean
+    });
+
+    game.settings.register("Loadouts", "loadouts-artwork-path", {
+        name: "Item Artwork Path",
+        hint: "Change item artwork path. Be sure to review the documentation for proper file-naming convention",
+        scope: "world",
+        config: true,
+        default: "modules/Loadouts/artwork/items",
+        type: String
+    });
+
+    game.settings.register("Loadouts", "loadouts-ignored-items", {
+        name: "Ignored Items",
+        hint: "A comma-separated list of in-game weapon items to exclude from management (e.g. Martial Arts)",
+        scope: "world",
+        config: true,
+        default: 'Martial Arts,Battleglove,Rippers,Unarmed,Thrown Weapon',
+        type: String
+    });
+
+    game.settings.register("Loadouts", "loadouts-managed-types", {
+        name: "Managed Item Types",
+        hint: "A comma-separated list of item types to be managed by Loadouts",
+        scope: "world",
+        config: true,
+        default: "weapon,ammo",  // Ammo is here simply for Grenade support as of v2.1.11a
+        type: String
     });
 
      // Boolean: mooks y/n

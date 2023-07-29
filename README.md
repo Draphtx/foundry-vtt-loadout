@@ -16,12 +16,14 @@ A basic algo identifies free spaces within a series of tiles that are assigned t
 
 ## Features
 - When a weapon is added to a player's inventory, a token representing that weapon is automatically slotted into their Loadouts slots (tiles)
+- Slots and scenes for Loadouts are configured using macros and can be weighted for preference and named
+- If no slots are available, the player is given a choice of whether or not to keep the item in their inventory
 - When a player fires a weapon or otherwise changes its equip state or magazine count, these changes are reflected in the linked tokens
 - When a player drags a token into a different space in their Loadout, the represented item's equip state is changed to match
-- If a player deletes a weapon from their inventory, the linked token is deleted from their Loadout.
+- If a player deletes a weapon from their inventory, the linked token is deleted from their Loadout
 
 ## Basic usage
-_As this is in an alpha stage and many customization elements are still in development, these directions may change quickly._
+_As this is in an alpha stage and many customization elements are still in development, these directions may change quickly. Breaking changes may also be introduced that will require the reconfiguration of scenes and tiles._
 
 1. Create a scene to use for your Loadouts (in the future the module will include a test scene) and populate it with tiles representing the characters' 'slots.'
 2. Use the included macro `setLoadoutsScene` to flag the current scene as a Loadouts scene.
