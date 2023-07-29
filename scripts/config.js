@@ -10,7 +10,7 @@ Hooks.once("init", function () {
         type: Boolean,
     });
 
-    // Enable or disable Loadouts functionality
+    // Magazine counters
     game.settings.register("Loadouts", "option-magazine-tracking", {
         name: "Enable Magazine Tracking",
         hint: "Where applicable, reflect magazine count using the itemToken's health bar",
@@ -20,4 +20,10 @@ Hooks.once("init", function () {
         type: Boolean,
     });
 
+     // Boolean: mooks y/n
+     // Text field: ignored items
+     // Filepath: equipped status icon
+     // Filepath: artwork folder for auto-token generation (blocked)
+     // Boolean: show token names
+     // 
 });
