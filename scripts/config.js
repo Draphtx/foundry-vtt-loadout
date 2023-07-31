@@ -21,7 +21,7 @@ Hooks.once("init", function () {
     });
 
     game.settings.register("Loadouts", "loadouts-teleport-to-stash", {
-        name: "Enable Remote Stash",
+        name: "Enable Remote Stashing",
         hint: "When a 'carried' slot cannot be found, allow the player to 'teleport' the item back to an uncarried stash",
         scope: "world",
         config: true,
@@ -30,7 +30,7 @@ Hooks.once("init", function () {
     });
 
     game.settings.register("Loadouts", "loadouts-full-add-anyway", {
-        name: "Enable Remote Stash",
+        name: "Enable Add When Full",
         hint: "When no slots are available, allow the player to add the item to their inventory anyway",
         scope: "world",
         config: true,
@@ -66,12 +66,21 @@ Hooks.once("init", function () {
         type: String
     });
 
-    game.settings.register("Loadouts", "loadouts-managed-types", {
+    game.settings.register("Loadouts", "loadouts-managed-item-types", {
         name: "Managed Item Types",
         hint: "A comma-separated list of item types to be managed by Loadouts",
         scope: "world",
         config: true,
-        default: "weapon,ammo",  // Ammo is here simply for Grenade support as of v2.1.11a
+        default: "weapon",
+        type: String
+    });
+
+    game.settings.register("Loadouts", "loadouts-managed-actor-types", {
+        name: "Managed Actor Types",
+        hint: "A comma-separated list of actor types that may utilize Loadouts",
+        scope: "world",
+        config: true,
+        default: "character",  // This could also be used for Mooks and vehicles (untested)
         type: String
     });
 
