@@ -8,12 +8,12 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for NPCs
-    if(itemDocument.parent.type != "character"){
+    if(! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)){
         return false;
     }
 
     // Only handle weapons and, by extension, grenades
-    if((! itemDocument.type == "weapon") && (! itemDocument.type == "ammo")){
+    if(! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
         return false;
     } else if(itemDocument.type == "ammo"){
         itemIsGrenade = [
@@ -34,14 +34,7 @@ function verifyItemSuitability(itemDocument){
         }
     // Exclude some items that are not currently covered by the system
     } else if(itemDocument.type == "weapon"){
-        itemIsExcluded = [
-            "Martial Arts",
-            "Battleglove",
-            "Rippers",
-            "Unarmed",
-            "Thrown Weapon"
-        ].includes(itemDocument.name)
-        if(itemIsExcluded){
+        if(game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name)){
             return false;
         } else { 
             return true; 
