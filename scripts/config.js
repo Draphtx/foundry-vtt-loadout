@@ -84,9 +84,4 @@ Hooks.once("init", function () {
         type: String
     });
 
-     // Boolean: mooks y/n
-     // Text field: ignored items
-     // Filepath: equipped status icon
-     // Filepath: artwork folder for auto-token generation (blocked)
-
 });
