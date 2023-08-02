@@ -209,6 +209,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
     // Set the basic configuration for the dropped token
     let itemTokenSettings = {
         name: itemDocument.name,
+        actorLink: false,
         disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
         displayName: 30,                                                    // Show nameplate when hovered by anyone
         flags: {
