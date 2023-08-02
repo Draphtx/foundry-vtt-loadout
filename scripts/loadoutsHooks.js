@@ -223,7 +223,8 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         height: itemOrientation.size_y,
         x: validPositions[0].x1,                                            // First-available position's x coord
         y: validPositions[0].y1,                                            // First-available position's y coord
-        rotation: itemOrientation.rotation                                  // Token's rotation
+        rotation: itemOrientation.rotation,                                 // Token's rotation
+        lockRotation: true
     }
 
     // Override some positional settings if rotated

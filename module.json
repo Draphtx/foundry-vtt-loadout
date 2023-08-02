@@ -10,7 +10,7 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.2.1",
+  "version": "2.2.2",
   "minimumCoreVersion": "10.283",
   "relationships": {
     "systems": [
@@ -21,7 +21,8 @@
     ]
   },
   "scripts": [
-    "scripts/loadoutsHooks.js"
+    "scripts/loadoutsHooks.js",
+    "scripts/config.js"
   ],
   "languages": [
     {
