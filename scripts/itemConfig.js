@@ -4,14 +4,14 @@ for (let i = 0; i < itemArray.length; i++) {
     var isConfigured
     if(itemArray[i].flags.Loadouts){
         if(itemArray[i].flags.Loadouts.configured == true){
-            isConfigured = "√"
+            isConfigured = "&#x25C9;"
         } else {
-            isConfigured = "X"
+            isConfigured = "&#x25CC;"
         }
        } else {
-          isConfigured = "X"
+          isConfigured = "&#x25CC;"
     }
-    itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " (" + itemArray[i].type + ") [" + isConfigured + "]</option>";
+    itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " (" + itemArray[i].type + ") " + isConfigured + "</option>";
 }
 
 new Dialog({
@@ -118,7 +118,7 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
     await setStack
 }
 
-function configureLoadoutsItem(itemId, imagePath, applyToVariants, tokenWidth, tokenHeight, stackSize){
+async function configureLoadoutsItem(itemId, imagePath, applyToVariants, tokenWidth, tokenHeight, stackSize){
     console.log("Configuring items")
     
     var itemIds = new Set([itemId])
@@ -140,5 +140,7 @@ function configureLoadoutsItem(itemId, imagePath, applyToVariants, tokenWidth, t
     }
     
     ui.notifications.info("Loadouts: configured " + itemIds.length + " items for management")
+    await new Promise(r => setTimeout(r, 500));
+    game.macros.getName("setLoadoutsItems").execute()
 
 }
