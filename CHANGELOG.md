@@ -1,6 +1,6 @@
 # foundry-vtt-loadouts
 
-### 2.2.1a
+### 2.2.2a
 - Dynamic token pre-release
 - Lots of flag and minor name revisions that will break backwards compatibility
 
