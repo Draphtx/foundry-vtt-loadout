@@ -1,40 +1,44 @@
 var itemDropdown = "";
-var itemArray = game.items.filter(item => item.type == "weapon").sort((a, b) => a.name.localeCompare(b.name));
-for (let i = 0; i < itemArray.length; i++) {
-    var isConfigured
-    if(itemArray[i].flags.Loadouts){
-        if(itemArray[i].flags.Loadouts.configured == true){
-            isConfigured = "&#x25C9;"
+const loadoutsTypes = game.settings.get("Loadouts", "loadouts-managed-item-types")
+
+for(const loadoutsType of loadoutsTypes.split(',')){
+    itemDropdown +="<option disabled>" + loadoutsType.toUpperCase() + "</option>"
+    var itemArray = game.items.filter(item => item.type == loadoutsType).sort((a, b) => a.name.localeCompare(b.name));
+    for (let i = 0; i < itemArray.length; i++) {
+        var isConfigured
+        if(itemArray[i].flags.Loadouts){
+            if(itemArray[i].flags.Loadouts.configured == true){
+                isConfigured = "&#x25C9;"
+            } else {
+                isConfigured = "&#x25CC;"
+            }
         } else {
             isConfigured = "&#x25CC;"
         }
-       } else {
-          isConfigured = "&#x25CC;"
+        itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " (" + itemArray[i].type + ") " + isConfigured + "</option>";
     }
-    itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " (" + itemArray[i].type + ") " + isConfigured + "</option>";
 }
 
 new Dialog({
-    title: "Loadouts: Configure Items",
+    title: "Loadouts",
     content: `
     <form class="form-horizontal">
     <fieldset>
     
     <!-- Form Name -->
-    <legend>Loadouts: Item Configuration</legend>
+    <legend>Item Configuration</legend>
     
     <!-- Item Dropdown -->
     <div class="form-group">
-        <label for="selectedItem" style='font-weight:bold; width:38%; margin:4px 1%; display:inline-block;'>Select Item</label>
+        <label for="selectedItem" style='display:inline-block;'>Select Item</label>
         <select id="selectedItem" name="selectedItem" style='width:58%; margin:4px 1%; display:inline-block;'>` + itemDropdown + `</select>
     </div>
 
     <!-- Text input-->
     <div class="form-group">
-      <label class="col-md-4 control-label" for="imagePath">Image Path</label>  
+      <label class="col-md-4 control-label" for="imagePath">Image Path</label>
       <div class="col-md-4">
       <input id="imagePath" name="imagePath" type="text" value="modules/Loadouts/artwork/items/air-pistol.webp" class="form-control input-md">
-      <span class="help-block">Path to item's token image</span>  
       </div>
     </div>
     
@@ -74,7 +78,7 @@ new Dialog({
       <label class="col-md-4 control-label" for="stackSize">Stack Size</label>  
       <div class="col-md-4">
       <input id="stackSize" name="stackSize" type="text" maxlength="1" oninput="this.value=this.value.replace(/[^0-9]/g,'');" value="0" class="form-control input-md" required="">
-      <span class="help-block">The number of this item that can be contained in a single stack</span>  
+      <span class="help-block">Maximum stack size</span>  
       </div>
     </div>
     
