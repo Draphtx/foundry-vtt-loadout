@@ -6,8 +6,8 @@ for(const loadoutsType of loadoutsTypes.split(',')){
     var itemArray = game.items.filter(item => item.type == loadoutsType).sort((a, b) => a.name.localeCompare(b.name));
     for (let i = 0; i < itemArray.length; i++) {
         var isConfigured
-        if(itemArray[i].flags.Loadouts){
-            if(itemArray[i].flags.Loadouts.configured == true){
+        if(itemArray[i].flags.loadouts){
+            if(itemArray[i].flags.loadouts.configured == true){
                 isConfigured = "&#x25C9;"
             } else {
                 isConfigured = "&#x25CC;"
@@ -15,11 +15,12 @@ for(const loadoutsType of loadoutsTypes.split(',')){
         } else {
             isConfigured = "&#x25CC;"
         }
-        itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " (" + itemArray[i].type + ") " + isConfigured + "</option>";
+        itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " " + isConfigured + "</option>";
     }
 }
 
 new Dialog({
+    // TODO: Increase select width to accomodate long item names
     title: "Loadouts",
     content: `
     <form class="form-horizontal">
@@ -27,11 +28,11 @@ new Dialog({
     
     <!-- Form Name -->
     <legend>Item Configuration</legend>
-    
+     
     <!-- Item Dropdown -->
     <div class="form-group">
-        <label for="selectedItem" style='display:inline-block;'>Select Item</label>
-        <select id="selectedItem" name="selectedItem" style='width:58%; margin:4px 1%; display:inline-block;'>` + itemDropdown + `</select>
+        <label for="selectedItems" style='display:inline-block;'>Select Item</label>
+        <select id="selectedItems" name="selectedItems" multiple style='width:58%; margin:4px 1%; display:inline-block;'>` + itemDropdown + `</select>
     </div>
 
     <!-- Text input-->
@@ -40,19 +41,6 @@ new Dialog({
       <div class="col-md-4">
       <input id="imagePath" name="imagePath" type="text" value="modules/Loadouts/artwork/items/air-pistol.webp" class="form-control input-md">
       </div>
-    </div>
-    
-    <!-- Multiple Checkboxes -->
-    <div class="form-group">
-    <label class="col-md-4 control-label" for="applyToVariants">Apply to variants?</label>
-    <div class="col-md-4">
-    <div class="checkbox">
-        <label for="applyToVariants-0">
-        <input type="checkbox" name="applyToVariants" id="applyToVariants-0" value="true" checked>
-        Same settings for all qualities
-        </label>
-        </div>
-    </div>
     </div>
     
     <!-- Text input-->
@@ -95,9 +83,8 @@ new Dialog({
         apply: {
             label: "Apply Settings",
             callback: (html) => configureLoadoutsItem(
-                html.find('[name="selectedItem"]').val(),
+                html.find('[name="selectedItems"]').val(),
                 html.find('[name="imagePath"]').val(),
-                html.find('[name="applyToVariants"]').val(),
                 html.find('[name="tokenWidth"]').val(),
                 html.find('[name="tokenHeight"]').val(),
                 html.find('[name="stackSize"]').val()
@@ -107,13 +94,14 @@ new Dialog({
 }).render(true);
 
 async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize){
+    // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
     const flagItem = game.items.get(itemId)
-    const setConfigured = flagItem.setFlag('Loadouts', 'configured', true)
-    const setImg = flagItem.setFlag('Loadouts', 'img', imagePath)
-    const setWidth = flagItem.setFlag('Loadouts', 'width', tokenWidth)
-    const setHeight = flagItem.setFlag('Loadouts', 'height', tokenHeight)
-    const setStack = flagItem.setFlag('Loadouts', 'stack', stackSize)
+    const setConfigured = flagItem.setFlag('loadouts', 'configured', true)
+    const setImg = flagItem.setFlag('loadouts', 'img', imagePath)
+    const setWidth = flagItem.setFlag('loadouts', 'width', tokenWidth)
+    const setHeight = flagItem.setFlag('loadouts', 'height', tokenHeight)
+    const setStack = flagItem.setFlag('loadouts', 'stack', stackSize)
 
     await setConfigured
     await setImg
@@ -122,22 +110,8 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
     await setStack
 }
 
-async function configureLoadoutsItem(itemId, imagePath, applyToVariants, tokenWidth, tokenHeight, stackSize){
+async function configureLoadoutsItem(itemIds, imagePath, applyToVariants, tokenWidth, tokenHeight, stackSize){
     console.log("Configuring items")
-    
-    var itemIds = new Set([itemId])
-    if(applyToVariants){
-        const selectedItem = game.items.get(itemId)
-        console.log(selectedItem)
-        const itemBaseName = selectedItem.name.split(" (Poor)")[0].split(" (Excellent)")[0]
-
-        const relatedItems = game.items.filter(item => item.name.startsWith(itemBaseName))
-        for(const relatedItem of relatedItems){
-            itemIds.add(relatedItem.id)
-        }
-    }
-    
-    itemIds = Array.from(itemIds)
     itemIds = itemIds.filter(x => x !== undefined);
     for(const itemId of itemIds){
         setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize)
