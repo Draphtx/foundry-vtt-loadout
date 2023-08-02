@@ -9,14 +9,14 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for unwanted actor types
     if((! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
-    (! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
-    (game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
+       (! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
+       (game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
         console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
         return false;
-    } else if(! tokenDocument.flags.loadouts){
+    } else if(! "loadouts" in itemDocument.flags){
         console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
         return false;
-    } else if (! tokenDocument.flags.loadouts.configured == false){
+    } else if(! itemDocument.flags.loadouts.configured == true){
         console.info("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
         return false;
     } else {
@@ -26,7 +26,8 @@ function verifyItemSuitability(itemDocument){
 }
 
 // Check whether the item's Loadouts configuration contains any errors
-function validateLoadoutsConfiguration(itemFlags, fields){
+function validateLoadoutsConfiguration(itemDocument, fields){
+    const itemFlags = itemDocument.flags.loadouts
     for (let i = 0; i < fields.length; i++) {
         const field = fields[i];
         
@@ -36,8 +37,8 @@ function validateLoadoutsConfiguration(itemFlags, fields){
             return false;
         }
 
-        // Check if the field is of type 'string' for 'src', 'integer' for the others
-        if (field === 'src') {
+        // Check if the field is of type 'string' for 'img', 'integer' for the others
+        if (field === 'img') {
             if (typeof itemFlags[field] !== 'string') {
                 ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be a string. Unable to place token.`);
                 return false;
@@ -142,7 +143,7 @@ function processTilePositions(validTiles, itemOrientation){
 }
 
 // Before placing the itemToken, check for some edge cases where we may need user input
-function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
+function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument){
     if(! validPositions.length){
         const noSpaceDialog = new Dialog({
             title: "Loadouts Option",
@@ -159,7 +160,7 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
                 }
                },
                default: "drop"
@@ -180,18 +181,18 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
                 }
                },
                default: "drop"
         }).render(true);
     } else {
-        placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
+        placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument)
     }    
 }
 
 // Place the itemActor token in the loadout scene
-async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
+async function placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument){
     
     // We will set the token's disposition value based on the item's quality
     const dispositionMap = {
@@ -210,14 +211,20 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
         name: itemDocument.name,
         disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
         displayName: 30,                                                    // Show nameplate when hovered by anyone
-        flags: {loadouts: {"item": itemDocument.id}},                       // Link the token to the item by id
+        flags: {
+            loadouts: {
+                "managed": true,
+                "linked_item": itemDocument.id,
+            }},                                                             // Link the token to the item by id
+        texture: {src: itemDocument.flags.loadouts.img},
+        width: itemOrientation.size_x,
+        height: itemOrientation.size_y,
         x: validPositions[0].x1,                                            // First-available position's x coord
         y: validPositions[0].y1,                                            // First-available position's y coord
         rotation: itemOrientation.rotation                                  // Token's rotation
     }
 
-    // Set scaling based on rotation
-    
+    // Override some positional settings if rotated
     if(itemOrientation.rotation == true){
         itemTokenSettings.width = itemOrientation.size_y,
         itemTokenSettings.height = itemOrientation.size_x,
@@ -225,9 +232,6 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
             scaleX: itemOrientation.size_y, 
             scaleY: itemOrientation.size_y
         }
-    } else {
-        itemTokenSettings.width = itemOrientation.size_x,
-        itemTokenSettings.height = itemOrientation.size_y
     }
 
     // Set the token's 'health' bar to represent magazine contents, if available
@@ -253,7 +257,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     }
 
     // Define the tokenDocument settings for the itemActor
-    itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
+    itemTokenDoc = await itemDocument.parent.getTokenDocument(itemTokenSettings)
 
     // Create the token in the loadout scene
     const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
@@ -292,7 +296,7 @@ async function addLoadoutsItem(itemDocument) {
     }
 
     // Validate that the item's Loadouts configuration is acceptable
-    if(! validateLoadoutsConfiguration(itemDocument.flags.loadouts, ["src", "width", "height", "stack"])){
+    if(! validateLoadoutsConfiguration(itemDocument, ["img", "width", "height", "stack"])){
         console.warn("▞▖Loadouts: Managed item " + itemDocument.name + " failed configuration checks. Item will not be linked to a Loadouts token")
         return;
     }
@@ -310,7 +314,7 @@ async function addLoadoutsItem(itemDocument) {
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
     const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
 
-    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
+    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument)
 
     Hooks.off("createItem");
     return;

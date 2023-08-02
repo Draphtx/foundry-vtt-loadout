@@ -96,21 +96,20 @@ new Dialog({
 async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize){
     // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
-    const flagItem = game.items.get(itemId)
-    const setConfigured = flagItem.setFlag('loadouts', 'configured', true)
-    const setImg = flagItem.setFlag('loadouts', 'img', imagePath)
-    const setWidth = flagItem.setFlag('loadouts', 'width', tokenWidth)
-    const setHeight = flagItem.setFlag('loadouts', 'height', tokenHeight)
-    const setStack = flagItem.setFlag('loadouts', 'stack', stackSize)
-
-    await setConfigured
-    await setImg
-    await setWidth
-    await setHeight
-    await setStack
+    await game.items.get(itemId).update({
+        flags: {
+            loadouts: {
+                configured: true,
+                img: imagePath,
+                width: parseInt(tokenWidth),
+                height: parseInt(tokenHeight),
+                stack: parseInt(stackSize)
+            }
+        }
+    })
 }
 
-async function configureLoadoutsItem(itemIds, imagePath, applyToVariants, tokenWidth, tokenHeight, stackSize){
+async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, stackSize){
     console.log("Configuring items")
     itemIds = itemIds.filter(x => x !== undefined);
     for(const itemId of itemIds){
