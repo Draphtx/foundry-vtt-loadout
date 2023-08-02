@@ -1,7 +1,7 @@
 Hooks.once("init", function () {
 
     // Display itemToken names on hover
-    game.settings.register("Loadouts", "loadouts-token-names", {
+    game.settings.register("loadouts", "loadouts-token-names", {
         name: "Show Token Nameplates",
         hint: "Display the linked item's name as the token's nameplate",
         scope: "world",
@@ -11,7 +11,7 @@ Hooks.once("init", function () {
     });
 
     // Magazine counters
-    game.settings.register("Loadouts", "loadouts-magazine-bars", {
+    game.settings.register("loadouts", "loadouts-magazine-bars", {
         name: "Enable Magazine Bars",
         hint: "Where applicable, reflect magazine count using the itemToken's health bar",
         scope: "world",
@@ -20,7 +20,7 @@ Hooks.once("init", function () {
         type: Boolean
     });
 
-    game.settings.register("Loadouts", "loadouts-teleport-to-stash", {
+    game.settings.register("loadouts", "loadouts-teleport-to-stash", {
         name: "Enable Remote Stashing",
         hint: "When a 'carried' slot cannot be found, allow the player to 'teleport' the item back to an uncarried stash",
         scope: "world",
@@ -29,7 +29,7 @@ Hooks.once("init", function () {
         type: Boolean
     });
 
-    game.settings.register("Loadouts", "loadouts-full-add-anyway", {
+    game.settings.register("loadouts", "loadouts-full-add-anyway", {
         name: "Enable Add When Full",
         hint: "When no slots are available, allow the player to add the item to their inventory anyway",
         scope: "world",
@@ -39,7 +39,7 @@ Hooks.once("init", function () {
     });
 
     // Enable for mooks
-    game.settings.register("Loadouts", "loadouts-enable-mooks", {
+    game.settings.register("loadouts", "loadouts-enable-mooks", {
         name: "Enable Mook Support",
         hint: "Manage mook inventories as well, where tiles are provided",
         scope: "world",
@@ -48,7 +48,7 @@ Hooks.once("init", function () {
         type: Boolean
     });
 
-    game.settings.register("Loadouts", "loadouts-artwork-path", {
+    game.settings.register("loadouts", "loadouts-artwork-path", {
         name: "Item Artwork Path",
         hint: "Change item artwork path. Be sure to review the documentation for proper file-naming convention",
         scope: "world",
@@ -57,7 +57,7 @@ Hooks.once("init", function () {
         type: String
     });
 
-    game.settings.register("Loadouts", "loadouts-ignored-items", {
+    game.settings.register("loadouts", "loadouts-ignored-items", {
         name: "Ignored Items",
         hint: "A comma-separated list of in-game weapon items to exclude from management (e.g. Martial Arts)",
         scope: "world",
@@ -66,7 +66,7 @@ Hooks.once("init", function () {
         type: String
     });
 
-    game.settings.register("Loadouts", "loadouts-managed-item-types", {
+    game.settings.register("loadouts", "loadouts-managed-item-types", {
         name: "Managed Item Types",
         hint: "A comma-separated list of item types to be managed by Loadouts",
         scope: "world",
@@ -75,7 +75,7 @@ Hooks.once("init", function () {
         type: String
     });
 
-    game.settings.register("Loadouts", "loadouts-managed-actor-types", {
+    game.settings.register("loadouts", "loadouts-managed-actor-types", {
         name: "Managed Actor Types",
         hint: "A comma-separated list of actor types that may utilize Loadouts",
         scope: "world",
