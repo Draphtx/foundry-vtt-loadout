@@ -11,16 +11,16 @@ function verifyItemSuitability(itemDocument){
     if((! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
        (! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
        (game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
-        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
+        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
         return false;
     } else if(! "loadouts" in itemDocument.flags){
-        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
+        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
         return false;
     } else if(! itemDocument.flags.loadouts.configured == true){
-        console.info("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
+        console.info("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
         return false;
     } else {
-        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
+        console.debug("▞▖Loadouts:: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
         return true;
     }
 }
@@ -215,8 +215,9 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         flags: {
             loadouts: {
                 "managed": true,
-                "linked_item": itemDocument.id,
-            }},                                                             // Link the token to the item by id
+                "instance": {
+                    "linked_item": itemDocument.id,
+                }}},                                                        // Link the token to the item by id
         texture: {src: itemDocument.flags.loadouts.img},
         width: itemOrientation.size_x,
         height: itemOrientation.size_y,
@@ -340,8 +341,9 @@ function removeLoadoutsItem(itemDocument) {
     for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
             loadoutsScene.id).tokens.contents.filter(
-                token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.linked_item == itemDocument.id)
+                token => token.flags.loadouts).filter(
+                    token => token.flags.loadouts.instance).find(
+                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
@@ -382,13 +384,15 @@ async function updateLoadoutsItem(itemDocument){
     for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
             loadoutsScene.id).tokens.contents.filter(
-                token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.linked_item == itemDocument.id)
+                token => token.flags.loadouts).filter(
+                    token => token.flags.loadouts.instance).find(
+                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
     }
 
+    // TODO: When a new token is first being created, we get this error message. I'm guessing it's not available yet.
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
         console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
@@ -437,7 +441,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
 
     // Find the actor who owns the item linked to the Loadouts token
     triggeringUser = game.users.find(user => user.id == userId)
-    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.linked_item))
+    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item))
     if((linkedItemOwner == null) || (linkedItemOwner == undefined)){
         console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + triggeringUser.name)
         return;
@@ -447,7 +451,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         ui.notification.warn("Loadouts: users can only move Loadouts tokens linked to an item in their inventory")        
         return;
     }
-    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.linked_item)
+    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item)
     if((linkedItem == null) || (linkedItem == undefined)){
         console.warn("▞▖Loadouts: unable to find an item associated with a token recently updated by " + triggeringUser.name)
         return;
