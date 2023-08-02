@@ -7,51 +7,49 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
-    // Do not try to handle item management for NPCs
-    if(! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)){
+    // Do not try to handle item management for unwanted actor types
+    if((! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
+    (! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
+    (game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
+        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
         return false;
-    }
-
-    // Only handle weapons and, by extension, grenades
-    if(! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
+    } else if(! tokenDocument.flags.loadouts){
+        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
         return false;
-    } else if(itemDocument.type == "ammo"){
-        itemIsGrenade = [
-            "Grenade (Armor Piercing)",
-            "Grenade (Biotoxin)",
-            "Grenade (EMP)",
-            "Grenade (Flashbang)",
-            "Grenade (Incendiary)",
-            "Grenade (Poison)",
-            "Grenade (Sleep)",
-            "Grenade (Smoke)",
-            "Grenade (Teargas)"
-        ].includes(itemDocument.name)
-        if(! itemIsGrenade){
-            return false;
-        } else { 
-            return true; 
-        }
-    // Exclude some items that are not currently covered by the system
-    } else if(itemDocument.type == "weapon"){
-        if(game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name)){
-            return false;
-        } else { 
-            return true; 
-        }
+    } else if (! tokenDocument.flags.loadouts.configured == false){
+        console.info("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
+        return false;
+    } else {
+        console.debug("Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
+        return true;
     }
 }
 
-// Get the weapon's actor representation
-function findItemActor(itemDocument){
-    let selectedItemActor = game.actors.getName(
-        itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0]  // Same actor regardless of weapon quality
-        )
-    if(( selectedItemActor == null) || (selectedItemActor == undefined)){
-        return false;
-    } else {
-        return selectedItemActor;
+// Check whether the item's Loadouts configuration contains any errors
+function validateLoadoutsConfiguration(itemFlags, fields){
+    for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        
+        // Check if the field is present and has a value
+        if (!itemFlags.hasOwnProperty(field) || itemFlags[field] === null || itemFlags[field] === undefined) {
+            ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration has no value for "${field}". Unable to place token.`);
+            return false;
+        }
+
+        // Check if the field is of type 'string' for 'src', 'integer' for the others
+        if (field === 'src') {
+            if (typeof itemFlags[field] !== 'string') {
+                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be a string. Unable to place token.`);
+                return false;
+            }
+        } else {
+            if (!Number.isInteger(itemFlags[field])) {
+                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be an integer. Unable to place token.`);
+                return false;
+            }
+        }
     }
+    return true;
 }
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
@@ -293,17 +291,16 @@ async function addLoadoutsItem(itemDocument) {
         return;
     }
 
-    // Try to locate an actor and token matching the item name
-    selectedItemActor = findItemActor(itemDocument)
-    if(! selectedItemActor){
-        console.warn("▞▖Loadouts: unable to find Loadouts token for " + itemDocument.name + ". Item will not be linked to a Loadouts token")
+    // Validate that the item's Loadouts configuration is acceptable
+    if(! validateLoadoutsConfiguration(itemDocument.flags.loadouts, ["src", "width", "height", "stack"])){
+        console.warn("▞▖Loadouts: Managed item " + itemDocument.name + " failed configuration checks. Item will not be linked to a Loadouts token")
         return;
     }
 
     // Item token size and rotation boolean
     const itemOrientation = {
-        size_x: selectedItemActor.prototypeToken.width,
-        size_y: selectedItemActor.prototypeToken.height,
+        size_x: itemDocument.flags.loadouts.width,
+        size_y: itemDocument.flags.loadouts.height,
         rotation: 0
     }
 
