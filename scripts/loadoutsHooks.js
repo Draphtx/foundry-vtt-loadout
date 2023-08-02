@@ -336,11 +336,11 @@ function removeLoadoutsItem(itemDocument) {
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
     var loadoutsItemToken = undefined
-    for(const loadoutsScene in loadoutsScenes){
+    for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
+            loadoutsScene.id).tokens.contents.filter(
                 token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.item == itemDocument.id)
+                    token => token.flags.loadouts.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
@@ -378,11 +378,11 @@ async function updateLoadoutsItem(itemDocument){
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
     var loadoutsItemToken = undefined
-    for(const loadoutsScene in loadoutsScenes){
+    for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
+            loadoutsScene.id).tokens.contents.filter(
                 token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.item == itemDocument.id)
+                    token => token.flags.loadouts.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
@@ -436,7 +436,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
 
     // Find the actor who owns the item linked to the Loadouts token
     triggeringUser = game.users.find(user => user.id == userId)
-    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.item))
+    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.linked_item))
     if((linkedItemOwner == null) || (linkedItemOwner == undefined)){
         console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + triggeringUser.name)
         return;
@@ -446,7 +446,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         ui.notification.warn("Loadouts: users can only move Loadouts tokens linked to an item in their inventory")        
         return;
     }
-    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.item)
+    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.linked_item)
     if((linkedItem == null) || (linkedItem == undefined)){
         console.warn("▞▖Loadouts: unable to find an item associated with a token recently updated by " + triggeringUser.name)
         return;
