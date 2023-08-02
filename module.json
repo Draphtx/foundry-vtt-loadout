@@ -1,6 +1,7 @@
 {
-  "name": "Loadouts",
   "title": "Foundry VTT Loadouts",
+  "name": "loadouts",
+  "id": "loadouts",
   "description": "Enables an inventory-based graphical loadout system.",
   "authors": [
     {
@@ -9,7 +10,7 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.1.10",
+  "version": "2.2.1",
   "minimumCoreVersion": "10.283",
   "relationships": {
     "systems": [
@@ -17,7 +18,8 @@
         "id": "cyberpunk-red-core",
         "manifest": "https://gitlab.com/cyberpunk-red-team/fvtt-cyberpunk-red-core"
       }
-    ],
+    ]
+  },
   "scripts": [
     "scripts/loadoutsHooks.js"
   ],

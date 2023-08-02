@@ -1,5 +1,9 @@
 # foundry-vtt-loadouts
 
+### 2.2.1a
+- Dynamic token pre-release
+- Lots of flag and minor name revisions that will break backwards compatibility
+
 ### 2.1.10a
 - Module facelift: cover and screenshots added to module manifest
 

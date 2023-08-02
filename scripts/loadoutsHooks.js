@@ -7,51 +7,50 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
-    // Do not try to handle item management for NPCs
-    if(! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)){
+    // Do not try to handle item management for unwanted actor types
+    if((! game.settings.get("loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
+       (! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
+       (game.settings.get("loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
+        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
         return false;
-    }
-
-    // Only handle weapons and, by extension, grenades
-    if(! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
+    } else if(! "loadouts" in itemDocument.flags){
+        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
         return false;
-    } else if(itemDocument.type == "ammo"){
-        itemIsGrenade = [
-            "Grenade (Armor Piercing)",
-            "Grenade (Biotoxin)",
-            "Grenade (EMP)",
-            "Grenade (Flashbang)",
-            "Grenade (Incendiary)",
-            "Grenade (Poison)",
-            "Grenade (Sleep)",
-            "Grenade (Smoke)",
-            "Grenade (Teargas)"
-        ].includes(itemDocument.name)
-        if(! itemIsGrenade){
-            return false;
-        } else { 
-            return true; 
-        }
-    // Exclude some items that are not currently covered by the system
-    } else if(itemDocument.type == "weapon"){
-        if(game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name)){
-            return false;
-        } else { 
-            return true; 
-        }
+    } else if(! itemDocument.flags.loadouts.configured == true){
+        console.info("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
+        return false;
+    } else {
+        console.debug("▞▖Loadouts:: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
+        return true;
     }
 }
 
-// Get the weapon's actor representation
-function findItemActor(itemDocument){
-    let selectedItemActor = game.actors.getName(
-        itemDocument.name.split(" (Poor)")[0].split(" (Excellent)")[0]  // Same actor regardless of weapon quality
-        )
-    if(( selectedItemActor == null) || (selectedItemActor == undefined)){
-        return false;
-    } else {
-        return selectedItemActor;
+// Check whether the item's Loadouts configuration contains any errors
+function validateLoadoutsConfiguration(itemDocument, fields){
+    const itemFlags = itemDocument.flags.loadouts
+    for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        
+        // Check if the field is present and has a value
+        if (!itemFlags.hasOwnProperty(field) || itemFlags[field] === null || itemFlags[field] === undefined) {
+            ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration has no value for "${field}". Unable to place token.`);
+            return false;
+        }
+
+        // Check if the field is of type 'string' for 'img', 'integer' for the others
+        if (field === 'img') {
+            if (typeof itemFlags[field] !== 'string') {
+                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be a string. Unable to place token.`);
+                return false;
+            }
+        } else {
+            if (!Number.isInteger(itemFlags[field])) {
+                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be an integer. Unable to place token.`);
+                return false;
+            }
+        }
     }
+    return true;
 }
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
@@ -144,7 +143,7 @@ function processTilePositions(validTiles, itemOrientation){
 }
 
 // Before placing the itemToken, check for some edge cases where we may need user input
-function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
+function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument){
     if(! validPositions.length){
         const noSpaceDialog = new Dialog({
             title: "Loadouts Option",
@@ -161,7 +160,7 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
                 }
                },
                default: "drop"
@@ -182,18 +181,18 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                 add: {
                  icon: '<i class="fas fa-times"></i>',
                  label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument) }
+                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
                 }
                },
                default: "drop"
         }).render(true);
     } else {
-        placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
+        placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument)
     }    
 }
 
 // Place the itemActor token in the loadout scene
-async function placeItemActor(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument){
+async function placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument){
     
     // We will set the token's disposition value based on the item's quality
     const dispositionMap = {
@@ -202,7 +201,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
         "excellent": 1
     }    
     const statusIconMap = {
-        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
         "carried": "",
         "owned": ""
     }
@@ -210,18 +209,27 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     // Set the basic configuration for the dropped token
     let itemTokenSettings = {
         name: itemDocument.name,
+        actorLink: false,
         disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
         displayName: 30,                                                    // Show nameplate when hovered by anyone
-        flags: {loadouts: {"item": itemDocument.id}},                       // Link the token to the item by id
+        flags: {
+            loadouts: {
+                "managed": true,
+                "instance": {
+                    "linked_item": itemDocument.id,
+                }}},                                                        // Link the token to the item by id
+        texture: {src: itemDocument.flags.loadouts.img},
+        width: itemOrientation.size_x,
+        height: itemOrientation.size_y,
         x: validPositions[0].x1,                                            // First-available position's x coord
         y: validPositions[0].y1,                                            // First-available position's y coord
         rotation: itemOrientation.rotation                                  // Token's rotation
     }
 
-    // Set scaling based on rotation
-    itemTokenSettings.width = itemOrientation.size_x;
-    itemTokenSettings.height = itemOrientation.size_y;
+    // Override some positional settings if rotated
     if(itemOrientation.rotation == true){
+        itemTokenSettings.width = itemOrientation.size_y,
+        itemTokenSettings.height = itemOrientation.size_x,
         itemTokenSettings.texture = {
             scaleX: itemOrientation.size_y, 
             scaleY: itemOrientation.size_y
@@ -251,7 +259,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, sel
     }
 
     // Define the tokenDocument settings for the itemActor
-    itemTokenDoc = await selectedItemActor.getTokenDocument(itemTokenSettings)
+    itemTokenDoc = await itemDocument.parent.getTokenDocument(itemTokenSettings)
 
     // Create the token in the loadout scene
     const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
@@ -289,17 +297,16 @@ async function addLoadoutsItem(itemDocument) {
         return;
     }
 
-    // Try to locate an actor and token matching the item name
-    selectedItemActor = findItemActor(itemDocument)
-    if(! selectedItemActor){
-        console.warn("▞▖Loadouts: unable to find Loadouts token for " + itemDocument.name + ". Item will not be linked to a Loadouts token")
+    // Validate that the item's Loadouts configuration is acceptable
+    if(! validateLoadoutsConfiguration(itemDocument, ["img", "width", "height", "stack"])){
+        console.warn("▞▖Loadouts: Managed item " + itemDocument.name + " failed configuration checks. Item will not be linked to a Loadouts token")
         return;
     }
 
     // Item token size and rotation boolean
     const itemOrientation = {
-        size_x: selectedItemActor.prototypeToken.width,
-        size_y: selectedItemActor.prototypeToken.height,
+        size_x: itemDocument.flags.loadouts.width,
+        size_y: itemDocument.flags.loadouts.height,
         rotation: 0
     }
 
@@ -309,7 +316,7 @@ async function addLoadoutsItem(itemDocument) {
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
     const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
 
-    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, selectedItemActor, itemDocument)
+    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument)
 
     Hooks.off("createItem");
     return;
@@ -331,11 +338,12 @@ function removeLoadoutsItem(itemDocument) {
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
     var loadoutsItemToken = undefined
-    for(const loadoutsScene in loadoutsScenes){
+    for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
-                token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.item == itemDocument.id)
+            loadoutsScene.id).tokens.contents.filter(
+                token => token.flags.loadouts).filter(
+                    token => token.flags.loadouts.instance).find(
+                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
@@ -373,16 +381,18 @@ async function updateLoadoutsItem(itemDocument){
             scene => scene.flags.loadouts.isLoadoutsScene == true)
     
     var loadoutsItemToken = undefined
-    for(const loadoutsScene in loadoutsScenes){
+    for(const loadoutsScene of loadoutsScenes){
         loadoutsItemToken = game.scenes.get(
-            loadoutsScenes[loadoutsScene].id).tokens.contents.filter(
-                token => token.flags.loadouts).find(
-                    token => token.flags.loadouts.item == itemDocument.id)
+            loadoutsScene.id).tokens.contents.filter(
+                token => token.flags.loadouts).filter(
+                    token => token.flags.loadouts.instance).find(
+                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
         if(loadoutsItemToken){
             break;
         }
     }
 
+    // TODO: When a new token is first being created, we get this error message. I'm guessing it's not available yet.
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
         console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
@@ -401,7 +411,7 @@ async function updateLoadoutsItem(itemDocument){
     
     // Update the linked token's overlay if the item is equipped
     statusIconMap = {
-        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
         "carried": "",
         "owned": ""
     }
@@ -431,7 +441,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
 
     // Find the actor who owns the item linked to the Loadouts token
     triggeringUser = game.users.find(user => user.id == userId)
-    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.item))
+    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item))
     if((linkedItemOwner == null) || (linkedItemOwner == undefined)){
         console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + triggeringUser.name)
         return;
@@ -441,7 +451,7 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         ui.notification.warn("Loadouts: users can only move Loadouts tokens linked to an item in their inventory")        
         return;
     }
-    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.item)
+    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item)
     if((linkedItem == null) || (linkedItem == undefined)){
         console.warn("▞▖Loadouts: unable to find an item associated with a token recently updated by " + triggeringUser.name)
         return;
