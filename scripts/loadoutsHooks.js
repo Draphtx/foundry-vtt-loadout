@@ -8,9 +8,9 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for unwanted actor types
-    if((! game.settings.get("Loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
-       (! game.settings.get("Loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
-       (game.settings.get("Loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
+    if((! game.settings.get("loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
+       (! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
+       (game.settings.get("loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
         console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
         return false;
     } else if(! "loadouts" in itemDocument.flags){
@@ -201,7 +201,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         "excellent": 1
     }    
     const statusIconMap = {
-        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
         "carried": "",
         "owned": ""
     }
@@ -411,7 +411,7 @@ async function updateLoadoutsItem(itemDocument){
     
     // Update the linked token's overlay if the item is equipped
     statusIconMap = {
-        "equipped": "modules/Loadouts/artwork/icons/status-equipped.webp",
+        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
         "carried": "",
         "owned": ""
     }

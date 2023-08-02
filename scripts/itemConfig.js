@@ -1,5 +1,5 @@
 var itemDropdown = "";
-const loadoutsTypes = game.settings.get("Loadouts", "loadouts-managed-item-types")
+const loadoutsTypes = game.settings.get("loadouts", "loadouts-managed-item-types")
 
 for(const loadoutsType of loadoutsTypes.split(',')){
     itemDropdown +="<option disabled>" + loadoutsType.toUpperCase() + "</option>"
@@ -39,7 +39,7 @@ new Dialog({
     <div class="form-group">
       <label class="col-md-4 control-label" for="imagePath">Image Path</label>
       <div class="col-md-4">
-      <input id="imagePath" name="imagePath" type="text" value="modules/Loadouts/artwork/items/air-pistol.webp" class="form-control input-md">
+      <input id="imagePath" name="imagePath" type="text" value="modules/loadouts/artwork/items/air-pistol.webp" class="form-control input-md">
       </div>
     </div>
     
