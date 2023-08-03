@@ -124,7 +124,7 @@ function processTilePositions(validTiles, itemOrientation){
         // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
         for(let blockingToken of blockingTokens){
                 // If the blockingToken is >= the new item, the item should use the filter but with Math.max
-            if(blockingToken.width >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.height > itemSizeH * loadoutsTile.parent.grid.size){
+            if(blockingToken.width >= itemSizeL || blockingToken.height > itemSizeH){
                 itemPositions = itemPositions.filter(p => 
                     p.x1 >= Math.max(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
                     p.y1 >= Math.max(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
@@ -215,6 +215,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         flags: {
             loadouts: {
                 "managed": true,
+                "linked": true,
                 "instance": {
                     "linked_item": itemDocument.id,
                 }}},                                                        // Link the token to the item by id
