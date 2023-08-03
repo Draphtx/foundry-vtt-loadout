@@ -69,6 +69,15 @@ new Dialog({
       <span class="help-block">Maximum stack size</span>  
       </div>
     </div>
+
+    <!-- Text input-->
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="loadoutsTag">Loadouts Tag</label>  
+      <div class="col-md-4">
+      <input id="loadoutsTag" name="loadoutsTag" type="text" maxlength="25" oninput="this.value=this.value.replace(/[^0-9A-Za-z-.]/g,'');" placeholder=null class="form-control input-md">
+      <span class="help-block">e.g. 'pistols' or 'healing-potions' </span>  
+      </div>
+    </div>
     
     </fieldset>
     </form>
@@ -87,13 +96,14 @@ new Dialog({
                 html.find('[name="imagePath"]').val(),
                 html.find('[name="tokenWidth"]').val(),
                 html.find('[name="tokenHeight"]').val(),
-                html.find('[name="stackSize"]').val()
+                html.find('[name="stackSize"]').val(),
+                html.find('[name="loadoutsTag"]').val() || null
             )
         },
     }
 }).render(true);
 
-async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize){
+async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag){
     // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
     await game.items.get(itemId).update({
@@ -103,21 +113,22 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
                 img: imagePath,
                 width: parseInt(tokenWidth),
                 height: parseInt(tokenHeight),
-                stack: parseInt(stackSize)
+                stack: parseInt(stackSize),
+                loadoutsTag: loadoutsTag
             }
         }
     })
 }
 
-async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, stackSize){
+async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag){
     console.log("Configuring items")
     itemIds = itemIds.filter(x => x !== undefined);
     for(const itemId of itemIds){
-        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize)
+        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag)
     }
     
     ui.notifications.info("Loadouts: configured " + itemIds.length + " items for management")
     await new Promise(r => setTimeout(r, 500));
-    game.macros.getName("setLoadoutsItems").execute()
+    game.macros.getName("configureLoadoutsItems").execute()
 
 }

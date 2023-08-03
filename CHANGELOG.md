@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.2.3a
+- Fixed some bugs with placement after dynamic token changes
+- Created compendium of weapon items pre-configured for Loadouts/CPR
+- Updated the settings to only contain what is currently-supported
+
 ### 2.2.2a
 - Dynamic token pre-release
 - Lots of flag and minor name revisions that will break backwards compatibility

@@ -8,10 +8,11 @@ Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document))
 // Verifies that the item is something that we want to handle in the loadout system
 function verifyItemSuitability(itemDocument){
     // Do not try to handle item management for unwanted actor types
-    if((! game.settings.get("loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)) || 
-       (! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)) ||
-       (game.settings.get("loadouts", "loadouts-ignored-items").includes(itemDocument.name))){
-        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not managed")
+    if(! game.settings.get("loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)){
+        console.debug("▞▖Loadouts: actor type '" + itemDocument.parent.type + "' not managed")
+        return false;
+    } else if(! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
+        console.debug("▞▖Loadouts: item type '" + itemDocument.type + "' not managed")
         return false;
     } else if(! "loadouts" in itemDocument.flags){
         console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
@@ -120,11 +121,11 @@ function processTilePositions(validTiles, itemOrientation){
                  t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
 
         // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
-        // There is something going on here with the use of the myItemSize * gridSize that makes me have to do this extra step of determining 
+        // There is something going on here with the use of the itemSize * gridSize that makes me have to do this extra step of determining 
         // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
         for(let blockingToken of blockingTokens){
-                // If the blockingToken is >= the new item, the item should use the filter but with Math.max
-            if(blockingToken.width >= itemSizeL * loadoutsTile.parent.grid.size || blockingToken.height > itemSizeH * loadoutsTile.parent.grid.size){
+            // If the blockingToken is >= the new item, the item should use the filter but with Math.max
+            if(blockingToken.width >= itemSizeL || blockingToken.height > itemSizeH){
                 itemPositions = itemPositions.filter(p => 
                     p.x1 >= Math.max(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
                     p.y1 >= Math.max(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
@@ -215,6 +216,7 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         flags: {
             loadouts: {
                 "managed": true,
+                "linked": true,
                 "instance": {
                     "linked_item": itemDocument.id,
                 }}},                                                        // Link the token to the item by id
@@ -330,9 +332,7 @@ Hooks.on("deleteItem", (document, options, userid) => removeLoadoutsItem(documen
 
 function removeLoadoutsItem(itemDocument) {
     // Don't bother with items that have not been linked to a loadout token
-    if(! itemDocument.flags.loadouts){
-        return;
-    }
+    if(! itemDocument.flags.loadouts){ return; }
 
     const loadoutsScenes = game.scenes.filter(
         scene => scene.flags.loadouts).filter(
@@ -367,15 +367,11 @@ function removeLoadoutsItem(itemDocument) {
 Hooks.on("updateItem", (document, options, userid) => updateLoadoutsItem(document));
 
 async function updateLoadoutsItem(itemDocument){
-    // Don't bother with items that have not been linked to a loadout token
-    if(! itemDocument.flags.loadouts){
-        return;
-    }
+    // When items are updated in the backend, we don't need to worry about them
+    if((itemDocument.parent == null) || (itemDocument.parent == undefined)){ return; }
     
-    // This function is only used to update the ammo bars of loadout weapons
-    if(! itemDocument.system.magazine){
-        return;
-    }
+    // Don't bother with items that have not been linked to a loadout token
+    if((! "loadouts" in itemDocument.flags) || (! itemDocument.flags.loadouts.configured == true)){ return; }
 
     const loadoutsScenes = game.scenes.filter(
         scene => scene.flags.loadouts).filter(
@@ -394,6 +390,8 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     // TODO: When a new token is first being created, we get this error message. I'm guessing it's not available yet.
+    //// I think that this is also causing an error when using configureLoadoutsItems because there is no parent for 
+    //// the item prototypes being altered(?)
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
         console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
@@ -407,8 +405,7 @@ async function updateLoadoutsItem(itemDocument){
                     derivedStats: {
                         hp: {
                             value: itemDocument.system.magazine.value
-                        }}}}})
-    }
+                        }}}}})}
     
     // Update the linked token's overlay if the item is equipped
     statusIconMap = {
@@ -477,7 +474,6 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         return;
     }
 
-    
     if((linkedItem == null) || (linkedItem == undefined)){
         console.warn("▞▖Loadouts: unable to find item for update in user's inventory")
     }
