@@ -394,6 +394,8 @@ async function updateLoadoutsItem(itemDocument){
     }
 
     // TODO: When a new token is first being created, we get this error message. I'm guessing it's not available yet.
+    //// I think that this is also causing an error when using configureLoadoutsItems because there is no parent for 
+    //// the item prototypes being altered(?)
     if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
         console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
         return;
