@@ -40,7 +40,6 @@ Hooks.once("init", function () {
     });
     */
 
-    /* WAITING ON CONFIG SUPPORT INITIATIVE
     game.settings.register("loadouts", "loadouts-teleport-to-stash", {
         name: "Enable Remote Stashing",
         hint: "When a 'carried' slot cannot be found, the player may choose to 'teleport' the item back to an uncarried stash",
@@ -49,9 +48,7 @@ Hooks.once("init", function () {
         default: false,
         type: Boolean
     });
-    */
 
-    /* WAITING ON CONFIG SUPPORT INITIATIVE
     game.settings.register("loadouts", "loadouts-full-add-anyway", {
         name: "Enable Add When Full",
         hint: "When no slots are available, the player may choose to add the item to their inventory anyway",
@@ -60,7 +57,6 @@ Hooks.once("init", function () {
         default: false,
         type: Boolean
     });
-    */
 
     // Display itemToken names on hover
     game.settings.register("loadouts", "loadouts-token-names", {
