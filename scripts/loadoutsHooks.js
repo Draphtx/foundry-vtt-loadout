@@ -25,7 +25,7 @@ function verifyItemSuitability(itemDocument){
             return false;
         } else {
             ui.notifications.warn("Lodouts: cannot add '" + itemDocument.name + "' to " + itemDocument.parent.name + "'s inventory. The GM has disabled the ability \
-                to add items unmanaged by Loadouts.")
+                to add " + itemDocument.type + " items that are not configured for Loadouts.")
             itemDocument.delete()
             return false;
         }
