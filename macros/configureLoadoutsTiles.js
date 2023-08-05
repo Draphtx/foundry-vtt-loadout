@@ -1,6 +1,13 @@
 const loadoutsTileDialog = new Dialog({
     title: "Define Loadouts Tile Options", 
     content:`
+    <script type="text/javascript">
+        function limitWeightLength(obj){
+            if (obj.value.length > 2){
+                obj.value = obj.value.slice(0,2); 
+            }
+        }
+    </script>
     <form>
       <div class="form-group">
         <label>Character Name</label>
@@ -8,35 +15,21 @@ const loadoutsTileDialog = new Dialog({
       </div>
     </form>
     <div class="form-group">
-        <label for="weightSelect">Preference Weight</label>
-        <select name="weightSelect">
-          <option value=0>0</option>
-          <option value=1>1</option>
-          <option value=2>2</option>
-          <option value=3>3</option>
-          <option value=4>4</option>
-          <option value=5>5</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="typeSelect">Storage Type</label>
-        <select name="typeSelect">
-          <option value="holster">Holster</option>
-          <option value="pocket">Pocket</option>
-          <option value="back/shoulder">Back/Shoulder</option>
-          <option value="backpack">Backpack</option>
-          <option value="duffel">Duffel</option>
-          <option value="stash">Stash</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="stateSelect">Equipped State</label>
-        <select name="stateSelect">
-          <option value="carried">Carried</option>
-          <option value="owned">Owned</option>
-          <option value="equipped">Equipped</option>
-        </select>
-      </div>`,
+      <label for="preferenceWeight">Preference Weight (0-99)</label>
+      <input type="number" id="preferenceWeight" name="preferenceWeight" min="0" max="99" oninput="limitWeightLength(this)">
+    </div>
+    <div class="form-group">
+      <label>Storage Name</label>
+      <input type='text' name='storageName' maxLength='50'></input>
+    </div>
+    <div class="form-group">
+      <label for="stateSelect">Equipped State</label>
+      <select name="stateSelect">
+        <option value="carried">carried</option>
+        <option value="owned">owned</option>
+        <option value="equipped">equipped</option>
+      </select>
+    </div>`,
       buttons: {
         cancel: {
             icon: "<i class='fas fa-check'></i>",
@@ -48,8 +41,8 @@ const loadoutsTileDialog = new Dialog({
             label: `Apply Changes` ,
             callback: html => {setupLoadoutsTiles(
                 html.find('[name="characterName"]').val(),
-                html.find('[name="weightSelect"]').val(),
-                html.find('[name="typeSelect"]').val(),
+                html.find('[name="preferenceWeight"]').val(),
+                html.find('[name="storageName"]').val(),
                 html.find('[name="stateSelect"]').val()
             )}   
             }
@@ -70,7 +63,7 @@ function getCharacterActorId(characterName){
     }
 }
 
-async function setupLoadoutsTiles(characterName, tileWeight, storageType, tileState){
+async function setupLoadoutsTiles(characterName, tileWeight, storageName, tileState){
     characterActorId = getCharacterActorId(characterName)
     if((characterActorId == null) || (characterActorId == undefined)){
         return;
@@ -80,7 +73,7 @@ async function setupLoadoutsTiles(characterName, tileWeight, storageType, tileSt
         "flags.loadouts": {
             "owner": characterActorId,
             "weight": tileWeight,
-            "type": storageType,
+            "name": storageName,
             "state": tileState
         }
     }))
