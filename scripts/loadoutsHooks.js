@@ -146,47 +146,61 @@ function processTilePositions(validTiles, itemOrientation){
 // Before placing the itemToken, check for some edge cases where we may need user input
 function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument){
     if(! validPositions.length){
-        const noSpaceDialog = new Dialog({
-            title: "Loadouts Option",
-            content: "<center><p>Unable to find an available Loadouts slot.<br>Add " + itemDocument.name + " to inventory regardless?</p></center>",
-            buttons: {
-                drop: {
-                 icon: '<i class="fas fa-check"></i>',
-                 label: "Drop Item",
-                 callback: () => {
-                    itemDocument.delete()
-                    return;
-                 }
+        if(game.settings.get("loadouts", 'loadouts-full-add-anyway')){
+            const noSpaceDialog = new Dialog({
+                title: "Loadouts Option",
+                content: "<center><p>Unable to find an available Loadouts slot.<br>Add " + itemDocument.name + " to inventory regardless?</p></center>",
+                buttons: {
+                    drop: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: "Drop Item",
+                    callback: () => {
+                        itemDocument.delete()
+                        return;
+                    }
+                    },
+                    add: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Add Item",
+                    callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
+                    }
                 },
-                add: {
-                 icon: '<i class="fas fa-times"></i>',
-                 label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
-                }
-               },
-               default: "drop"
-        }).render(true);
+                default: "drop"
+            }).render(true);
+        } else {
+            ui.notifications.warn("Loadouts: " + itemDocument.parent.name + " has no available slots, \
+                and the GM has disabled adding items beyond slot capacity. The item " + itemDocument.name + " will be removed.")
+            itemDocument.delete()
+            return false;
+        }
     } else if(selectedTile.flags.loadouts.state == "owned"){
-        const stashOnlyDialog = new Dialog({
-            title: "Loadouts Option",
-            content: ("<center><p>Unable to find an available Loadouts carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadouts.type + "?</center>"),
-            buttons: {
-                drop: {
-                 icon: '<i class="fas fa-check"></i>',
-                 label: "Drop Item",
-                 callback: () => {
-                    itemDocument.delete()
-                    return;
-                 }
+        if(game.settings.get('loadouts', 'loadouts-teleport-to-stash')){
+            const stashOnlyDialog = new Dialog({
+                title: "Loadouts Option",
+                content: ("<center><p>Unable to find an available Loadouts carry slot.<br>Add " + itemDocument.name + " to " + selectedTile.flags.loadouts.type + "?</center>"),
+                buttons: {
+                    drop: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: "Drop Item",
+                    callback: () => {
+                        itemDocument.delete()
+                        return;
+                    }
+                    },
+                    add: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Add Item",
+                    callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
+                    }
                 },
-                add: {
-                 icon: '<i class="fas fa-times"></i>',
-                 label: "Add Item",
-                 callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
-                }
-               },
-               default: "drop"
-        }).render(true);
+                default: "drop"
+            }).render(true);
+        } else {
+            ui.notifications.warn("Loadouts: " + itemDocument.parent.name + " has no available carry slots, \
+                and the GM has disabled teleporting items to stashes. The item " + itemDocument.name + " will be removed.")
+            itemDocument.delete()
+            return false;
+        }
     } else {
         placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument)
     }    
