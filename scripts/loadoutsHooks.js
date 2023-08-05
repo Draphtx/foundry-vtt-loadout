@@ -1,4 +1,4 @@
-console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:20px');
+console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:14px');
 
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
@@ -14,15 +14,21 @@ function verifyItemSuitability(itemDocument){
     } else if(! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
         console.debug("▞▖Loadouts: item type '" + itemDocument.type + "' not managed")
         return false;
-    } else if(! "loadouts" in itemDocument.flags){
-        console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged")
-        return false;
-    } else if(! itemDocument.flags.loadouts.configured == true){
-        console.info("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not configured")
-        return false;
-    } else {
+    }
+    
+    if("loadouts" in itemDocument.flags){
         console.debug("▞▖Loadouts:: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
         return true;
+    } else {
+        if(game.settings.get('loadouts', 'loadouts-allow-unconfigured-items')){
+            console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged but unconfigured items setting is set to permissive.")
+            return false;
+        } else {
+            ui.notifications.warn("Lodouts: cannot add '" + itemDocument.name + "' to " + itemDocument.parent.name + "'s inventory. The GM has disabled the ability \
+                to add items unmanaged by Loadouts.")
+            itemDocument.delete()
+            return false;
+        }
     }
 }
 

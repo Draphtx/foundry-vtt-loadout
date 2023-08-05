@@ -9,7 +9,6 @@ Hooks.once("init", function () {
         type: String
     });
 
-    /* WAITING ON CONFIG SUPPORT INITIATIVE
     game.settings.register("loadouts", "loadouts-allow-unconfigured-items", {
         name: "Allow Unconfigured Items",
         hint: "Allows players to add unconfigured items to their inventories",
@@ -18,7 +17,6 @@ Hooks.once("init", function () {
         default: true,
         type: Boolean
     });
-    */
 
     game.settings.register("loadouts", "loadouts-managed-actor-types", {
         name: "Managed Actor Types",
@@ -28,17 +26,6 @@ Hooks.once("init", function () {
         default: "character",  // This could also be used for Mooks and vehicles (untested)
         type: String
     });
-
-    /* WAITING ON CONFIG SUPPORT INITIATIVE, ALSO DEPRECATED IN NEAR FUTURE
-    game.settings.register("loadouts", "loadouts-magazine-bars", {
-        name: "Enable Magazine Bars",
-        hint: "Where applicable, reflect magazine count using the itemToken's health bar",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean
-    });
-    */
 
     game.settings.register("loadouts", "loadouts-teleport-to-stash", {
         name: "Enable Remote Stashing",
