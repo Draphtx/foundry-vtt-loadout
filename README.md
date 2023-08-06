@@ -4,6 +4,7 @@ Loadouts allows the GM to create visual Loadouts of any variety and style that a
 
 The goal of Loadouts is to allow GMs and players to better visualize their character's weaponry, dress, and other visual elements that normally go unchecked in VTT games but which may provide a great deal of additional character and narrative development opportunities. Also it's fun.
 
+![Early Alpha Example in CPR](artwork/module/ammo-mgmt.gif)
 ## Additional context
 Current work is atop to Cyberpunk Red Core system. System agnosticism is a high-priority, but releases for supported systems will include compendiums of pre-configured items.
 
