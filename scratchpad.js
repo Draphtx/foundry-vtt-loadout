@@ -151,3 +151,13 @@ new Dialog({
 
 function selectTargets(html){
 }
+
+// Find all custom Loadouts Tags
+allItemTypes = new Set()
+game.items.forEach(function(obj){
+    if("loadouts" in obj.flags){
+      allItemTypes.add(obj.flags.loadouts.loadoutsTag);
+    }
+})
+
+console.log(allItemTypes)

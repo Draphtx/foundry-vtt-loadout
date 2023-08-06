@@ -4,6 +4,7 @@ Loadouts allows the GM to create visual Loadouts of any variety and style that a
 
 The goal of Loadouts is to allow GMs and players to better visualize their character's weaponry, dress, and other visual elements that normally go unchecked in VTT games but which may provide a great deal of additional character and narrative development opportunities. Also it's fun.
 
+![Early Alpha Example in CPR](artwork/module/ammo-mgmt.gif)
 ## Additional context
 Current work is atop to Cyberpunk Red Core system. System agnosticism is a high-priority, but releases for supported systems will include compendiums of pre-configured items.
 
@@ -53,17 +54,21 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 
 `Character Name` Set the ownership of this tile to a specific player character. (Shared stashes will be implemented later)
 
-`Weight` An arbitrary value between 0-999 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack.
+`Weight` An arbitrary value between 0-99 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack.
 
-Currently in Cyberpunk Red with the sample Loadouts scene, I use:
- - 0 (most-preferred) for their hidden, small holsters at the ankle and under the arm
- - 1 for their hip holsters
- - 2 for their back pockets
- - 3 for their back/shoulder
- - 4 for any carried luggage
- - 5 (least-preferred) for their remote stash or other uncarried inventories
+Currently in Cyberpunk Red with the sample Loadouts scene, I use the following settings:
+ - `0` (most-preferred) for their hidden, small holsters at the ankle and under the arm
+ - `1` for their hip holsters
+ - `2` for their back pockets
+ - `3` for their back/shoulder
+ - `4` for any carried luggage
+ - `5` (least-preferred) for their remote stash or other uncarried inventories
 
-`Storage Name` allows you to designate names for tiles that may be used for in-game Loadouts notifications. E.g. 'Ni-Con added an Assault Rifle to his back/shoulder.'
+`Storage Name` Allows you to designate names for tiles that may be used for in-game Loadouts notifications. E.g. 'Ni-Con added an Assault Rifle to his back/shoulder.'
+
+`Item Types` (optional) A comma-separated list of system-defined types that may be added to the tile's storage slots. This allows for basic 'dedicated' storage like a tile that only accepts types *food,ingredient* and so won't have a weapon or armor placed in it.
+
+`Item Tags` (optional) A comma-separated list of Loadouts tags that may be added to the tile. For example, maybe a druid's herb pouch would only accept items configured with the Loadouts tag *herb* rather than everything in the system type *ingredient*. If `Item Types` is also set, this is a secondary filter - i.e. both Type and Tag must match for the item to be eligible.
 
 `Equipped State` designates whether the tile is carried or simply owned; that is, whether the inventory items in the tile are considered actively carried by the player or part of a stash left at another location.
 
