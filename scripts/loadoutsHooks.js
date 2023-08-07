@@ -90,11 +90,29 @@ function processTilePositions(validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
     for(const loadoutsTile of validTiles){
-        tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_x, itemOrientation.size_y)
 
+        // Find any tokens that are already within the Tile's bounds
+        let existingTokens = loadoutsTile.parent.tokens.filter(
+            t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
+                 t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
+
+        // If the item has a stack setting, check to see whether any of the existing tokens are stacks of the same item with room to spare
+        // By doing this here, we ensure that the tile's weight is still accounted for when looking for existing stacks
+        if(itemDocument.flags.loadouts.stack.max > 1){
+            let itemStacks = existingTokens.filter(t => 
+                t.name == itemDocument.name && 
+                (t.flags?.loadouts?.stack?.members?.length + (itemDocument?.system?.amount || 1)) <= (itemDocument?.flags?.loadouts?.stack?.max || 1)
+            );
+            if(validStacks.length > 0){
+                updateStackedItem(validStacks[0], loadoutsTile)
+                break;
+            }
+        }
+
+        let tilePositions = getTilePositions(loadoutsTile, blockingTokens, itemOrientation.size_x, itemOrientation.size_y)
         if(! tilePositions.length){
             if(itemOrientation.size_x != itemOrientation.size_y){
-                tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_y, itemOrientation.size_x)
+                tilePositions = getTilePositions(loadoutsTile, blockingTokens, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
                     itemOrientation.rotation = 90
                 }
@@ -106,12 +124,8 @@ function processTilePositions(validTiles, itemOrientation){
         }
     };
 
-    function checkExistingItemStacks(loadoutsTile, itemDocument){
-
-    }
-
     // Get an array of possible positions for the item to land if nothing was blocking its space
-    function getTilePositions(loadoutsTile, itemSizeL, itemSizeH){
+    function getTilePositions(loadoutsTile, blockingTokens, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
@@ -126,10 +140,6 @@ function processTilePositions(validTiles, itemOrientation){
                 }
             }
         }
-        // Find any tokens that may already be over the tile's area
-        let blockingTokens = loadoutsTile.parent.tokens.filter(
-            t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
-                 t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
 
         // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
         // There is something going on here with the use of the itemSize * gridSize that makes me have to do this extra step of determining 
@@ -152,6 +162,10 @@ function processTilePositions(validTiles, itemOrientation){
         return itemPositions;
     }
     return [selectedTile, tilePositions]
+}
+
+function updateStackedItem(validStack, loadoutsTile){
+    validStack.update({flags: {loadouts: {stack: { members}}}})
 }
 
 // Before placing the itemToken, check for some edge cases where we may need user input
@@ -340,12 +354,6 @@ async function addLoadoutsItem(itemDocument) {
     
     // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
     const validTiles = findValidTiles(itemDocument, itemOrientation)
-
-    // Check for existing stacks that may be able to accommodate some or all of the item quantity
-    let quantityKey = "amount" // TODO: Make configurable per-system (in 5e this is called 'quantity')
-    if((quantityKey in itemDocument.system) && (itemDocument.system.quantityKey > 1)){
-	    checkExistingItemStacks(validTiles, itemDocument)
-    }
 
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
     const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
