@@ -6,7 +6,7 @@ The goal of Loadouts is to allow GMs and players to better visualize their chara
 
 ![Early Alpha Example in CPR](artwork/module/ammo-mgmt.gif)
 ## Additional context
-Current work is atop to Cyberpunk Red Core system. System agnosticism is a high-priority, but releases for supported systems will include compendiums of pre-configured items.
+Current work is atop the Cyberpunk Red Core system. System agnosticism is a high-priority, but releases for supported systems will include compendiums of pre-configured items.
 
 The idea is to give the GM a quick way to see what the party 'looks' like in-game. The worlds of Cyberpunk and, nominally, fantasy environments place a lot of emphasis on the way that characters present to others; a heavily-armed party dressed like Rockerboys with guns strapped to every inch of their bodies would evoke a very different response than a well-dressed, low-key crew. Yet without any visual cues, it is easy for both players and GMs to overlook the visual 'state' of a character. It also means that characters rarely change clothing or armor, as there is little purpose outside of enforced mechanics.
 
