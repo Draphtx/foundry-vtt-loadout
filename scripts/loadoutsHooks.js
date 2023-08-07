@@ -75,8 +75,9 @@ function findValidTiles(itemDocument, itemOrientation){
     for(let loadoutsScene of loadoutsScenes){
         loadoutsTiles = loadoutsScene.tiles.filter(
             tile => tile.flags.loadouts).filter(
-                tile => tile.flags.loadouts.owner == itemDocument.parent.id && 
-                Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y))
+                tile => tile.flags.loadouts.owner == itemDocument.parent.id && // Find tiles owned by the correct character
+                itemDocument.system.type in tile.flags.loadouts.item_types.split(',') && // Find tiles allowing this item tye
+                Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y)) // Find tiles that are large enough for the item to begin with
         validTiles = [...validTiles, ...loadoutsTiles]
     }
 
@@ -104,6 +105,10 @@ function processTilePositions(validTiles, itemOrientation){
             break;
         }
     };
+
+    function checkExistingItemStacks(loadoutsTile, itemDocument){
+
+    }
 
     // Get an array of possible positions for the item to land if nothing was blocking its space
     function getTilePositions(loadoutsTile, itemSizeL, itemSizeH){
@@ -332,9 +337,15 @@ async function addLoadoutsItem(itemDocument) {
         size_y: itemDocument.flags.loadouts.height,
         rotation: 0
     }
-
+    
     // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
     const validTiles = findValidTiles(itemDocument, itemOrientation)
+
+    // Check for existing stacks that may be able to accommodate some or all of the item quantity
+    let quantityKey = "amount" // TODO: Make configurable per-system (in 5e this is called 'quantity')
+    if((quantityKey in itemDocument.system) && (itemDocument.system.quantityKey > 1)){
+	    checkExistingItemStacks(validTiles, itemDocument)
+    }
 
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
     const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
