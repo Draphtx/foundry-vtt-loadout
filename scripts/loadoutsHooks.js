@@ -99,12 +99,13 @@ function processTilePositions(validTiles, itemOrientation){
         // If the item has a stack setting, check to see whether any of the existing tokens are stacks of the same item with room to spare
         // By doing this here, we ensure that the tile's weight is still accounted for when looking for existing stacks
         if(itemDocument.flags.loadouts.stack.max > 1){
-            let itemStacks = existingTokens.filter(t => 
-                t.name == itemDocument.name && 
-                (t.flags?.loadouts?.stack?.members?.length + (itemDocument?.system?.amount || 1)) <= (itemDocument?.flags?.loadouts?.stack?.max || 1)
+            let validStacks = existingTokens.filter(t => t.name == itemDocument.name && 
+                                                        (t.flags?.loadouts?.stack?.members?.length + 1) <= (itemDocument?.flags?.loadouts?.stack?.max)
+            // Let's not account for individual item quantities for now - I'm not sure if or when we'll do anything with that
+            // (t.flags?.loadouts?.stack?.members?.length + (itemDocument?.system?.amount || 1)) <= (itemDocument?.flags?.loadouts?.stack?.max || 1)
             );
             if(validStacks.length > 0){
-                updateStackedItem(validStacks[0], loadoutsTile)
+                loadoutsTile.document.update
                 break;
             }
         }
