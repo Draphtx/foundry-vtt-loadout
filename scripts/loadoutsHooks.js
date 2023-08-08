@@ -6,59 +6,64 @@ console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; 
 Hooks.on("createItem", (document, options, userid) => addLoadoutsItem(document));
 
 // Verifies that the item is something that we want to handle in the loadout system
-function verifyItemSuitability(itemDocument){
-    // Do not try to handle item management for unwanted actor types
-    if(! game.settings.get("loadouts", "loadouts-managed-actor-types").includes(itemDocument.parent.type)){
-        console.debug("▞▖Loadouts: actor type '" + itemDocument.parent.type + "' not managed")
-        return false;
-    } else if(! game.settings.get("loadouts", "loadouts-managed-item-types").includes(itemDocument.type)){
-        console.debug("▞▖Loadouts: item type '" + itemDocument.type + "' not managed")
-        return false;
-    }
+function verifyItemSuitability(itemDocument) {
+    const managedActorTypes = game.settings.get("loadouts", "loadouts-managed-actor-types");
+    const managedItemTypes = game.settings.get("loadouts", "loadouts-managed-item-types");
+    const allowUnconfiguredItems = game.settings.get('loadouts', 'loadouts-allow-unconfigured-items');
     
-    if("loadouts" in itemDocument.flags){
-        console.debug("▞▖Loadouts:: " + itemDocument.name + " of type '" + itemDocument.type + "' is configured for management")
-        return true;
-    } else {
-        if(game.settings.get('loadouts', 'loadouts-allow-unconfigured-items')){
-            console.debug("▞▖Loadouts: " + itemDocument.name + " of type '" + itemDocument.type + "' not flagged but unconfigured items setting is set to permissive.")
-            return false;
-        } else {
-            ui.notifications.warn("Lodouts: cannot add '" + itemDocument.name + "' to " + itemDocument.parent.name + "'s inventory. The GM has disabled the ability \
-                to add " + itemDocument.type + " items that are not configured for Loadouts.")
-            itemDocument.delete()
-            return false;
-        }
+    // Do not try to handle item management for unwanted actor types
+    if (!managedActorTypes.includes(itemDocument.parent.type)) {
+        console.debug(`▞▖Loadouts: actor type '${itemDocument.parent.type}' not managed`);
+        return false;
     }
+
+    if (!managedItemTypes.includes(itemDocument.type)) {
+        console.debug(`▞▖Loadouts: item type '${itemDocument.type}' not managed`);
+        return false;
+    }
+
+    if ("loadouts" in itemDocument.flags) {
+        console.debug(`▞▖Loadouts:: ${itemDocument.name} of type '${itemDocument.type}' is configured for management`);
+        return true;
+    }
+
+    if (allowUnconfiguredItems) {
+        console.debug(`▞▖Loadouts: ${itemDocument.name} of type '${itemDocument.type}' not flagged but unconfigured items setting is set to permissive.`);
+        return false;
+    }
+
+    ui.notifications.warn(`Lodouts: cannot add '${itemDocument.name}' to ${itemDocument.parent.name}'s inventory. The GM has disabled the ability \
+        to add ${itemDocument.type} items that are not configured for Loadouts.`);
+    itemDocument.delete();
+    return false;
 }
+
 
 // Check whether the item's Loadouts configuration contains any errors
-function validateLoadoutsConfiguration(itemDocument, fields){
-    const itemFlags = itemDocument.flags.loadouts
-    for (let i = 0; i < fields.length; i++) {
-        const field = fields[i];
-        
+function validateLoadoutsConfiguration(itemDocument, fields) {
+    const itemFlags = itemDocument.flags.loadouts;
+
+    for (const field of fields) {
         // Check if the field is present and has a value
         if (!itemFlags.hasOwnProperty(field) || itemFlags[field] === null || itemFlags[field] === undefined) {
-            ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration has no value for "${field}". Unable to place token.`);
+            ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration has no value for "${field}". Unable to place token.`);
             return false;
         }
 
-        // Check if the field is of type 'string' for 'img', 'integer' for the others
-        if (field === 'img') {
-            if (typeof itemFlags[field] !== 'string') {
-                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be a string. Unable to place token.`);
-                return false;
-            }
-        } else {
-            if (!Number.isInteger(itemFlags[field])) {
-                ui.notifications.error(`Loadouts: Managed item ` + itemDocument.name + ` configuration parameter "${field}" should be an integer. Unable to place token.`);
-                return false;
-            }
+        // Check the field type
+        const fieldType = typeof itemFlags[field];
+        const expectedType = (field === 'img') ? 'string' : 'number';
+
+        if ((expectedType === 'string' && fieldType !== 'string') || 
+            (expectedType === 'number' && !Number.isInteger(itemFlags[field]))) {
+            ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration parameter "${field}" should be a ${expectedType}. Unable to place token.`);
+            return false;
         }
     }
+
     return true;
 }
+
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, itemOrientation){
@@ -86,9 +91,10 @@ function findValidTiles(itemDocument, itemOrientation){
 }
 
 // Find the available positions (if any) for the item in each tile
-function processTilePositions(validTiles, itemOrientation){
+function processTilePositions(itemDocument, validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
+    var itemStacked = false
     for(const loadoutsTile of validTiles){
 
         // Find any tokens that are already within the Tile's bounds
@@ -105,7 +111,8 @@ function processTilePositions(validTiles, itemOrientation){
             // (t.flags?.loadouts?.stack?.members?.length + (itemDocument?.system?.amount || 1)) <= (itemDocument?.flags?.loadouts?.stack?.max || 1)
             );
             if(validStacks.length > 0){
-                loadoutsTile.document.update
+                updateStack(itemDocument, validStacks[0], loadoutsTile);
+                itemStacked = true;
                 break;
             }
         }
@@ -165,9 +172,13 @@ function processTilePositions(validTiles, itemOrientation){
     return [selectedTile, tilePositions]
 }
 
-function updateStackedItem(validStack, loadoutsTile){
-    validStack.update({flags: {loadouts: {stack: { members}}}})
+function updateStack(itemDocument, validStack, loadoutsTile){
+    const existingMembership = [...validStack.document.flags.loadouts.stack.members];
+    existingMembership.push(itemDocument.id); 
+    validStack.document.update({flags: {loadouts: {stack: {members: existingMembership}}}});
+    ui.notifications.info(itemDocument.parent.name + " added " + itemDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
 }
+
 
 // Before placing the itemToken, check for some edge cases where we may need user input
 function performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument){
@@ -247,37 +258,35 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         "owned": ""
     }
 
-    // Set the basic configuration for the dropped token
     let itemTokenSettings = {
         name: itemDocument.name,
         actorLink: false,
-        disposition: dispositionMap[itemDocument.system.quality],           // Set the token disposition
-        displayName: 30,                                                    // Show nameplate when hovered by anyone
+        disposition: dispositionMap[itemDocument.system.quality],
+        displayName: 30,
         flags: {
             loadouts: {
                 "managed": true,
                 "linked": true,
-                "instance": {
-                    "linked_item": itemDocument.id,
-                }}},                                                        // Link the token to the item by id
-        texture: {src: itemDocument.flags.loadouts.img},
-        width: itemOrientation.size_x,
-        height: itemOrientation.size_y,
-        x: validPositions[0].x1,                                            // First-available position's x coord
-        y: validPositions[0].y1,                                            // First-available position's y coord
-        rotation: itemOrientation.rotation,                                 // Token's rotation
+                "stack": {
+                    "max": itemDocument.flags?.loadouts?.stack?.max,
+                    "members": [itemDocument.id]
+                }
+            }
+        },
+        texture: {
+            src: itemDocument.flags.loadouts.img,
+            // Incorporate the rotation checks right here
+            scaleX: itemOrientation.rotation ? itemOrientation.size_y : undefined,
+            scaleY: itemOrientation.rotation ? itemOrientation.size_y : undefined
+        },
+        width: itemOrientation.rotation ? itemOrientation.size_y : itemOrientation.size_x,
+        height: itemOrientation.rotation ? itemOrientation.size_x : itemOrientation.size_y,
+        x: validPositions[0].x1,
+        y: validPositions[0].y1,
+        rotation: itemOrientation.rotation,
         lockRotation: true
     }
 
-    // Override some positional settings if rotated
-    if(itemOrientation.rotation == true){
-        itemTokenSettings.width = itemOrientation.size_y,
-        itemTokenSettings.height = itemOrientation.size_x,
-        itemTokenSettings.texture = {
-            scaleX: itemOrientation.size_y, 
-            scaleY: itemOrientation.size_y
-        }
-    }
 
     // Set the token's 'health' bar to represent magazine contents, if available
     // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
@@ -357,7 +366,7 @@ async function addLoadoutsItem(itemDocument) {
     const validTiles = findValidTiles(itemDocument, itemOrientation)
 
     // Process the preference-sorted array of tiles until we find one that can accommodate the item token
-    const [selectedTile, validPositions] = processTilePositions(validTiles, itemOrientation)
+    const [selectedTile, validPositions] = processTilePositions(itemDocument, validTiles, itemOrientation)
 
     performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument)
 
@@ -370,99 +379,100 @@ async function addLoadoutsItem(itemDocument) {
 //// item is removed from the player's inventory.
 Hooks.on("deleteItem", (document, options, userid) => removeLoadoutsItem(document));
 
-function removeLoadoutsItem(itemDocument) {
+async function removeLoadoutsItem(itemDocument) {
     // Don't bother with items that have not been linked to a loadout token
-    if(! itemDocument.flags.loadouts){ return; }
+    if (!itemDocument.flags.loadouts) return;
 
-    const loadoutsScenes = game.scenes.filter(
-        scene => scene.flags.loadouts).filter(
-            scene => scene.flags.loadouts.isLoadoutsScene == true)
-    
-    var loadoutsItemToken = undefined
-    for(const loadoutsScene of loadoutsScenes){
-        loadoutsItemToken = game.scenes.get(
-            loadoutsScene.id).tokens.contents.filter(
-                token => token.flags.loadouts).filter(
-                    token => token.flags.loadouts.instance).find(
-                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
-        if(loadoutsItemToken){
-            break;
-        }
+    const loadoutsScenes = game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
+
+    let loadoutsItemToken;
+    for (const loadoutsScene of loadoutsScenes) {
+        loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
+            token.flags.loadouts?.stacks?.members?.includes(itemDocument.id)
+        );
+        if (loadoutsItemToken) break;
     }
-    
-    if(loadoutsItemToken == undefined || loadoutsItemToken == null) {
-        ui.notifications.warn("unable to find Loadouts token related to " + itemDocument.id + " on any Loadouts scene")
+
+    if (!loadoutsItemToken) {
+        ui.notifications.warn(`Unable to find Loadouts token related to ${itemDocument.id} on any Loadouts scene`);
         return;
     } else {
-        loadoutsItemToken.delete();
-        ui.notifications.info("Removed " + itemDocument.name + " from " + itemDocument.parent.name + "'s loadout in '" + loadoutsItemToken.parent.name + "'")
+        // Remove the itemDocument.id from the members array
+        const membersArray = loadoutsItemToken.flags.loadouts.stacks.members;
+        const index = membersArray.indexOf(itemDocument.id);
+        if (index > -1) {
+            membersArray.splice(index, 1);
+        }
+
+        // If the members array isn't empty, update the token's members array
+        if (membersArray.length > 0) {
+            loadoutsItemToken.update({ "flags.loadouts.stacks.members": membersArray });
+            ui.notifications.info(`Removed ${itemDocument.name} from a stack in ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+        } else {
+            // If the members array is empty after removal, delete the token
+            ui.notifications.info(`Removed ${itemDocument.name} from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+            loadoutsItemToken.delete();
+        }
     }
-    
-    Hooks.off("deleteItem")
-    return;
-};
+
+    Hooks.off("deleteItem");
+}
+
+
 
 // UPDATE ITEM HOOK
 //// Updates item tokens' 'health' bar when a weapon magazine changes states
 Hooks.on("updateItem", (document, options, userid) => updateLoadoutsItem(document));
 
-async function updateLoadoutsItem(itemDocument){
-    // When items are updated in the backend, we don't need to worry about them
-    if((itemDocument.parent == null) || (itemDocument.parent == undefined)){ return; }
-    
-    // Don't bother with items that have not been linked to a loadout token
-    if((! "loadouts" in itemDocument.flags) || (! itemDocument.flags.loadouts.configured == true)){ return; }
+async function updateLoadoutsItem(itemDocument) {
+    if (!itemDocument.parent) return;
 
-    const loadoutsScenes = game.scenes.filter(
-        scene => scene.flags.loadouts).filter(
-            scene => scene.flags.loadouts.isLoadoutsScene == true)
-    
-    var loadoutsItemToken = undefined
-    for(const loadoutsScene of loadoutsScenes){
-        loadoutsItemToken = game.scenes.get(
-            loadoutsScene.id).tokens.contents.filter(
-                token => token.flags.loadouts).filter(
-                    token => token.flags.loadouts.instance).find(
-                        token => token.flags.loadouts.instance.linked_item == itemDocument.id)
-        if(loadoutsItemToken){
-            break;
-        }
+    if (!itemDocument.flags.loadouts || !itemDocument.flags.loadouts.configured) return;
+
+    const loadoutsScenes = game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
+
+    let loadoutsItemToken;
+    for (const loadoutsScene of loadoutsScenes) {
+        loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
+            token.flags.loadouts?.stacks?.members?.includes(itemDocument.id)
+        );
+        if (loadoutsItemToken) break;
     }
 
-    // TODO: When a new token is first being created, we get this error message. I'm guessing it's not available yet.
-    //// I think that this is also causing an error when using configureLoadoutsItems because there is no parent for 
-    //// the item prototypes being altered(?)
-    if((loadoutsItemToken == null) || (loadoutsItemToken == undefined)){
-        console.warn("▞▖Loadouts: Loadouts item not found; cannot reflect " + itemDocument.parent.name + "'s inventory change")
+    if (!loadoutsItemToken) {
+        console.warn(`▞▖Loadouts: Loadouts item not found; cannot reflect ${itemDocument.parent.name}'s inventory change`);
         return;
     }
 
-    // Update the linked token's stats to reflect magazine changes
-    if(itemDocument.system.magazine.max != 0){
-        loadoutsItemToken.update(
-            {actorData: {
+    if (itemDocument.system.magazine.max !== 0) {
+        loadoutsItemToken.update({
+            actorData: {
                 system: {
                     derivedStats: {
                         hp: {
                             value: itemDocument.system.magazine.value
-                        }}}}})}
-    
-    // Update the linked token's overlay if the item is equipped
-    statusIconMap = {
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const statusIconMap = {
         "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
         "carried": "",
         "owned": ""
-    }
-    console.debug("▞▖Loadouts: changing equip status")
-    if(itemDocument.system.equipped){
+    };
+
+    if (itemDocument.system.equipped) {
         loadoutsItemToken.update({
             overlayEffect: statusIconMap[itemDocument.system.equipped]
-        })
+        });
     }
 
     Hooks.off("updateItem");
-    return;
 }
+
 
 // UPDATE TOKEN HOOK
 //// Updates a linked item's equip state based on the which Loadouts tile it lands on when moved by a player
