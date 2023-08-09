@@ -65,7 +65,7 @@ new Dialog({
     <div class="form-group">
       <label class="col-md-4 control-label" for="stackSize">Stack Size</label>  
       <div class="col-md-4">
-      <input id="stackSize" name="stackSize" type="text" maxlength="1" oninput="this.value=this.value.replace(/[^0-9]/g,'');" value="0" class="form-control input-md" required="">
+      <input id="stackSize" name="stackSize" type="text" maxlength="1" oninput="this.value=this.value.replace(/[^0-9]/g,'');" value="1" class="form-control input-md" required="">
       <span class="help-block">Maximum stack size</span>  
       </div>
     </div>
@@ -113,7 +113,7 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
                 img: imagePath,
                 width: parseInt(tokenWidth),
                 height: parseInt(tokenHeight),
-                stack: parseInt(stackSize),
+                stack: {max: parseInt(stackSize)},
                 loadoutsTag: loadoutsTag
             }
         }

@@ -1,5 +1,5 @@
 const loadoutsTileDialog = new Dialog({
-    title: "Define Loadouts Tile Options", 
+    title: "Loadouts", 
     content:`
     <script type="text/javascript">
         function limitWeightLength(obj){
@@ -8,28 +8,48 @@ const loadoutsTileDialog = new Dialog({
             }
         }
     </script>
-    <form>
-      <div class="form-group">
-        <label>Character Name</label>
-        <input type='text' name='characterName'></input>
-      </div>
-    </form>
+    <form class="form-horizontal">
+    <fieldset>
+    
+    <!-- Form Name -->
+    <legend>Tile Configuration</legend>
+    
     <div class="form-group">
-      <label for="preferenceWeight">Preference Weight (0-99)</label>
-      <input type="number" id="preferenceWeight" name="preferenceWeight" min="0" max="99" oninput="limitWeightLength(this)">
+      <label>Character Name</label>
+      <input type='text' name='characterName'></input>
     </div>
+    
+    <div class="form-group">
+      <label for="preferenceWeight">Preference Weight</label>
+      <input type="number" id="preferenceWeight" name="preferenceWeight" placeholder='0-99' min="0" max="99" oninput="limitWeightLength(this)">
+    </div>
+    
+    <div class="form-group">
+      <label>Allowed Item Types</label>
+      <input type='text' name='allowedItemTypes' placeholder="e.g. 'weapon,ammo'. Blank for all"></input>
+    </div>
+
+    <div class="form-group">
+      <label>Allowed Item Tags</label>
+      <input type='text' name='allowedItemTags' placeholder="e.g. 'my,custom,tags'. Blank for all"></input>
+    </div>
+    
     <div class="form-group">
       <label>Storage Name</label>
-      <input type='text' name='storageName' maxLength='50'></input>
+      <input type='text' name='storageName' maxLength='50' placeholder="defaults to 'storage'"></input>
     </div>
-    <div class="form-group">
-      <label for="stateSelect">Equipped State</label>
+  
+    <label for="stateSelect">Equipped State</label>
       <select name="stateSelect">
         <option value="carried">carried</option>
         <option value="owned">owned</option>
         <option value="equipped">equipped</option>
       </select>
-    </div>`,
+    </div>
+
+    </fieldset>
+    </form>
+    `,
       buttons: {
         cancel: {
             icon: "<i class='fas fa-check'></i>",
@@ -42,6 +62,8 @@ const loadoutsTileDialog = new Dialog({
             callback: html => {setupLoadoutsTiles(
                 html.find('[name="characterName"]').val(),
                 html.find('[name="preferenceWeight"]').val(),
+                html.find('[name="allowedItemTypes"]').val(),
+                html.find('[name="allowedItemTags"]').val(),
                 html.find('[name="storageName"]').val(),
                 html.find('[name="stateSelect"]').val()
             )}   
@@ -63,7 +85,7 @@ function getCharacterActorId(characterName){
     }
 }
 
-async function setupLoadoutsTiles(characterName, tileWeight, storageName, tileState){
+async function setupLoadoutsTiles(characterName, tileWeight, allowedTypes, allowedTags, storageName, tileState){
     characterActorId = getCharacterActorId(characterName)
     if((characterActorId == null) || (characterActorId == undefined)){
         return;
@@ -71,14 +93,16 @@ async function setupLoadoutsTiles(characterName, tileWeight, storageName, tileSt
 
     canvas.tiles.controlled.forEach(tile => tile.document.update({
         "flags.loadouts": {
-            "owner": characterActorId,
-            "weight": tileWeight,
-            "name": storageName,
-            "state": tileState
+          "name": storageName,
+          "owner": characterActorId,
+          "weight": tileWeight,
+          "allowed_types": allowedTypes.trim() ? allowedTypes : null,
+          "allowed_tags": allowedTags.trim() ? allowedTags : null, 
+          "state": tileState
         }
     }))
 
-    if(! game.scene.current.flags.loadouts){
+    if(! game.scenes.current.flags.loadouts){
         ui.notifications.warn("Loadouts: tile(s) configured, but the current scene is not flagged as a Loadouts scene. Ensure that the configureLoadoutsScene macro is run.")
     } else {
         ui.notifications.info("Loadouts: tile(s) configured")
