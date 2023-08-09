@@ -146,6 +146,11 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
             if(validStacks.length > 0){
                 updateStack(itemDocument, validStacks[0], loadoutsTile);
                 isStacked = true;
+                itemDocument.update({  // Ensure that the item is in the appropriate equipped state for the stack
+                    system: {
+                        equipped: loadoutsTile.flags.loadouts.state
+                    }
+                });
                 break;
             }
         }
@@ -300,10 +305,14 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         actorLink: false,
         disposition: dispositionMap[itemDocument.system.quality],
         displayName: 30,
+        system: {
+            equipped: selectedTile.flags.loadouts.state
+        },
         flags: {
             loadouts: {
                 "managed": true,
                 "linked": true,
+                "owner": itemDocument.parent.id,
                 "stack": {
                     "max": itemDocument.flags?.loadouts?.stack?.max,
                     "members": [itemDocument.id]
@@ -352,14 +361,6 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
 
     // Create the token in the loadout scene
     const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
-
-    // Update the inventory item's equipped state based on where the token ended up, and set a flag indicating a linked token
-    itemDocument.update({
-        "system.equipped": selectedTile.flags.loadouts.state,
-        "flags.loadouts" : {
-            linked: true
-        }
-    })
 
     // Send notifications
     if(selectedTile.flags.loadouts.state == "owned"){
@@ -524,26 +525,26 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
 
     // Find the actor who owns the item linked to the Loadouts token
     triggeringUser = game.users.find(user => user.id == userId)
-    linkedItemOwner = game.actors.find(actor => actor.items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item))
-    if((linkedItemOwner == null) || (linkedItemOwner == undefined)){
+    tokenOwner = game.actors.get(tokenDocument.flags.loadouts.owner)
+    if((tokenOwner == null) || (tokenOwner == undefined)){
         console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + triggeringUser.name)
         return;
     }
-    if((linkedItemOwner.id != triggeringUser.id) && (triggeringUser.role != 4)){
+    if((tokenOwner.id != triggeringUser.id) && (triggeringUser.role != 4)){
         // TODO: This is not technically true for now - they can move the token, but they'll get a warning
         ui.notification.warn("Loadouts: users can only move Loadouts tokens linked to an item in their inventory")        
         return;
     }
-    linkedItem = game.actors.find(actor => actor.id == linkedItemOwner.id).items.find(item => item.id == tokenDocument.flags.loadouts.instance.linked_item)
-    if((linkedItem == null) || (linkedItem == undefined)){
-        console.warn("▞▖Loadouts: unable to find an item associated with a token recently updated by " + triggeringUser.name)
+    linkedItems = tokenDocument.flags.loadouts.stack.members
+    if(!linkedItems.length > 0){
+        console.warn("▞▖Loadouts: unable to find item(s) associated with a token recently updated by " + triggeringUser.name)
         return;
     }
     
     // Find Loadouts tiles owned by the item's owner
     let validTiles = tokenDocument.parent.tiles.filter(
         tile => tile.flags.loadouts).filter(
-            tile => tile.flags.loadouts.owner == linkedItemOwner.id)
+            tile => tile.flags.loadouts.owner == tokenOwner.id)
     
     var selectedTile = null
     for(const loadoutsTile of validTiles){
@@ -559,16 +560,15 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         return;
     }
 
-    if((linkedItem == null) || (linkedItem == undefined)){
-        console.warn("▞▖Loadouts: unable to find item for update in user's inventory")
-    }
-
     // Update the inventory item's equipped/carried/owned status to reflect the tile on which it was placed
-    if(selectedTile.flags.loadouts.state == linkedItem.system.equipped){
-    } else {
-        linkedItem.update({system:{equipped: selectedTile.flags.loadouts.state}})
-        ui.notifications.info("Loadouts: set " + linkedItem.name + "equipped state to " + selectedTile.flags.loadouts.state + " to reflect new tile location.")
-    }
+    for(const itemId of linkedItems){
+        inventoryItem = tokenOwner.items.get(itemId)
+        if(selectedTile.flags.loadouts.state == inventoryItem.system.equipped){
+        } else {
+            inventoryItem.update({system:{equipped: selectedTile.flags.loadouts.state}})
+            ui.notifications.info("Loadouts: set " + inventoryItem.name + "equipped state to " + selectedTile.flags.loadouts.state + " to reflect new tile location.")
+        }
+    };
     
     Hooks.off("updateToken")
     return;
