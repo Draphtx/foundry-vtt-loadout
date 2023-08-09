@@ -92,9 +92,9 @@ function findValidTiles(itemDocument, itemOrientation){
 
 // Find the available positions (if any) for the item in each tile
 function processTilePositions(itemDocument, validTiles, itemOrientation){
-    var tilePositions = [];
-    var selectedTile = null
-    var itemStacked = false
+    let tilePositions = [];
+    let selectedTile = null
+    let itemStacked = false
     for(const loadoutsTile of validTiles){
 
         // Find any tokens that are already within the Tile's bounds
@@ -407,10 +407,10 @@ async function removeLoadoutsItem(itemDocument) {
         // If the members array isn't empty, update the token's members array
         if (membersArray.length > 0) {
             loadoutsItemToken.update({ "flags.loadouts.stacks.members": membersArray });
-            ui.notifications.info(`Removed ${itemDocument.name} from a stack in ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+            ui.notifications.info(`Loadouts: ${itemDocument.parent.name} removed '${itemDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
         } else {
             // If the members array is empty after removal, delete the token
-            ui.notifications.info(`Removed ${itemDocument.name} from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+            ui.notifications.info(`Removed '${itemDocument.name}' from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
             loadoutsItemToken.delete();
         }
     }
