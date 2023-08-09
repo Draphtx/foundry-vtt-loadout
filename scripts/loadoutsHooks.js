@@ -423,7 +423,7 @@ async function removeLoadoutsItem(itemDocument) {
     let loadoutsItemToken;
     for (const loadoutsScene of loadoutsScenes) {
         loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
-            token.flags.loadouts?.stacks?.members?.includes(itemDocument.id)
+            token.flags.loadouts?.stack?.members?.includes(itemDocument.id)
         );
         if (loadoutsItemToken) break;
     }
@@ -433,7 +433,7 @@ async function removeLoadoutsItem(itemDocument) {
         return;
     } else {
         // Remove the itemDocument.id from the members array
-        const membersArray = loadoutsItemToken.flags.loadouts.stacks.members;
+        const membersArray = loadoutsItemToken.flags.loadouts.stack.members;
         const index = membersArray.indexOf(itemDocument.id);
         if (index > -1) {
             membersArray.splice(index, 1);
@@ -441,7 +441,7 @@ async function removeLoadoutsItem(itemDocument) {
 
         // If the members array isn't empty, update the token's members array
         if (membersArray.length > 0) {
-            loadoutsItemToken.update({ "flags.loadouts.stacks.members": membersArray });
+            loadoutsItemToken.update({ "flags.loadouts.stack.members": membersArray });
             ui.notifications.info(`Loadouts: ${itemDocument.parent.name} removed '${itemDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
         } else {
             // If the members array is empty after removal, delete the token
