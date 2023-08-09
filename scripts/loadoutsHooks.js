@@ -129,6 +129,7 @@ function findValidTiles(itemDocument, itemOrientation){
 function processTilePositions(itemDocument, validTiles, itemOrientation){
     var tilePositions = [];
     var selectedTile = null
+    let isStacked = false
     for(const loadoutsTile of validTiles){
         // If the item has a stack setting, check to see whether any of the existing tokens are stacks of the same item with room to spare
         // By doing this here, we ensure that the tile's weight is still accounted for when looking for existing stacks
@@ -205,13 +206,13 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
         }
         return itemPositions;
     }
-    return [selectedTile, tilePositions]
+    return [isStacked, selectedTile, tilePositions]
 }
 
 function updateStack(itemDocument, validStack, loadoutsTile){
-    const existingMembership = [...validStack.document.flags.loadouts.stack.members];
+    const existingMembership = [...validStack.flags.loadouts.stack.members];
     existingMembership.push(itemDocument.id); 
-    validStack.document.update({flags: {loadouts: {stack: {members: existingMembership}}}});
+    validStack.update({flags: {loadouts: {stack: {members: existingMembership}}}});
     ui.notifications.info(itemDocument.parent.name + " added " + itemDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
 }
 
@@ -400,10 +401,9 @@ async function addLoadoutsItem(itemDocument) {
     
     // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
     const validTiles = findValidTiles(itemDocument, itemOrientation)
-    console.log(validTiles)
-    const [selectedTile, validPositions] = processTilePositions(itemDocument, validTiles, itemOrientation)
+    const [isStacked, selectedTile, validPositions] = processTilePositions(itemDocument, validTiles, itemOrientation)
 
-    performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument)
+    if(! isStacked){ performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument) };
 
     Hooks.off("createItem");
     return;
