@@ -9,7 +9,7 @@ Hooks.once("init", function () {
 
     game.settings.register("loadouts", "loadouts-managed-item-types", {
         name: "Managed Item Types",
-        hint: "A comma-separated list of item types to be managed by Loadouts (for " + game.system.id + " choices are: " + systemItemtypes + ")",
+        hint: "A comma-separated list of item types to be managed by Loadouts (for " + game.system.id + " choices are: " + systemItemTypes + ")",
         scope: "world",
         config: true,
         default: "weapon",
@@ -83,7 +83,7 @@ Hooks.once("init", function () {
 
     game.settings.register("loadouts", "loadouts-managed-item-types", {
         name: "Managed Item Types",
-        hint: "A comma-separated list of item types to be managed by Loadouts (for " + game.system.id + " choices are: " + systemItemtypes + ")",
+        hint: "A comma-separated list of item types to be managed by Loadouts (for " + game.system.id + " choices are: " + systemItemTypes + ")",
         scope: "world",
         config: true,
         default: "weapon",

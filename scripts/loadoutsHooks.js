@@ -43,27 +43,49 @@ function verifyItemSuitability(itemDocument) {
 function validateLoadoutsConfiguration(itemDocument, fields) {
     const itemFlags = itemDocument.flags.loadouts;
 
-    for (const field of fields) {
-        // Check if the field is present and has a value
-        if (!itemFlags.hasOwnProperty(field) || itemFlags[field] === null || itemFlags[field] === undefined) {
+    for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        let value;  // The value we are checking
+
+        // Check if it's a nested field
+        if (field.includes('[') && field.includes(']')) {
+            const [parent, child] = field.split('[');
+            const childKey = child.replace(']', '');
+
+            if (!itemFlags[parent] || !itemFlags[parent].hasOwnProperty(childKey)) {
+                ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration is missing "${field}". Unable to place token.`);
+                return false;
+            }
+            value = itemFlags[parent][childKey];
+        } else {
+            if (!itemFlags.hasOwnProperty(field)) {
+                ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration is missing "${field}". Unable to place token.`);
+                return false;
+            }
+            value = itemFlags[field];
+        }
+
+        // Now check for null or undefined
+        if (value === null || value === undefined) {
             ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration has no value for "${field}". Unable to place token.`);
             return false;
         }
 
-        // Check the field type
-        const fieldType = typeof itemFlags[field];
-        const expectedType = (field === 'img') ? 'string' : 'number';
-
-        if ((expectedType === 'string' && fieldType !== 'string') || 
-            (expectedType === 'number' && !Number.isInteger(itemFlags[field]))) {
-            ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration parameter "${field}" should be a ${expectedType}. Unable to place token.`);
-            return false;
+        // Check the value type
+        if (field.endsWith('img') || field.endsWith('[img]')) {
+            if (typeof value !== 'string') {
+                ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration parameter "${field}" should be a string. Unable to place token.`);
+                return false;
+            }
+        } else {
+            if (!Number.isInteger(value)) {
+                ui.notifications.error(`Loadouts: Managed item ${itemDocument.name} configuration parameter "${field}" should be an integer. Unable to place token.`);
+                return false;
+            }
         }
     }
-
     return true;
 }
-
 
 // Do a cursory filtering of the tiles that may be able to accomodate the item according to their geometry and ownership flags
 function findValidTiles(itemDocument, itemOrientation){
@@ -77,24 +99,37 @@ function findValidTiles(itemDocument, itemOrientation){
     }
     
     let validTiles = []
+    console.log(`looking for valid tiles: owner "${itemDocument.parent.id}", type "${itemDocument.type}", x: ${itemOrientation.size_x}, y: ${itemOrientation.size_y} `)
     for(let loadoutsScene of loadoutsScenes){
         loadoutsTiles = loadoutsScene.tiles.filter(
             tile => tile.flags.loadouts).filter(
-                tile => tile.flags.loadouts.owner == itemDocument.parent.id && // Find tiles owned by the correct character
-                itemDocument.system.type in tile.flags.loadouts.item_types.split(',') && // Find tiles allowing this item tye
-                Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y)) // Find tiles that are large enough for the item to begin with
+                tile => tile.flags.loadouts.owner == itemDocument.parent.id).filter(
+                    tile => {
+                        const allowedTypes = tile.flags.loadouts?.allowed_types;
+                    
+                        // If allowedTypes is set but doesn't include itemDocument.system.type, we reject the tile.
+                        if (allowedTypes && !allowedTypes.split(',').includes(itemDocument.type)) {
+                            console.log(`reject tile due to type discrepancy`)
+                            return false;
+                        }
+                    
+                        // If allowedTypes is null or undefined, or if it includes itemDocument.system.type, we continue with the size check.
+                        console.log(`checking tile size: ${Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size)} can hold ${Math.max(itemOrientation.size_x, itemOrientation.size_y)}?`)
+                        return Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y);
+                    }
+                )
         validTiles = [...validTiles, ...loadoutsTiles]
     }
 
     // Return the valid tiles, sorted by preference weight
     return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
 }
-
+/*
 // Find the available positions (if any) for the item in each tile
 function processTilePositions(itemDocument, validTiles, itemOrientation){
     let tilePositions = [];
     let selectedTile = null
-    let itemStacked = false
+    let isStacked = false
     for(const loadoutsTile of validTiles){
 
         // Find any tokens that are already within the Tile's bounds
@@ -112,15 +147,15 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
             );
             if(validStacks.length > 0){
                 updateStack(itemDocument, validStacks[0], loadoutsTile);
-                itemStacked = true;
+                isStacked = true;
                 break;
             }
         }
 
-        let tilePositions = getTilePositions(loadoutsTile, blockingTokens, itemOrientation.size_x, itemOrientation.size_y)
+        let tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_x, itemOrientation.size_y)
         if(! tilePositions.length){
             if(itemOrientation.size_x != itemOrientation.size_y){
-                tilePositions = getTilePositions(loadoutsTile, blockingTokens, itemOrientation.size_y, itemOrientation.size_x)
+                tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_y, itemOrientation.size_x)
                 if(tilePositions.length){
                     itemOrientation.rotation = 90
                 }
@@ -133,7 +168,79 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
     };
 
     // Get an array of possible positions for the item to land if nothing was blocking its space
-    function getTilePositions(loadoutsTile, blockingTokens, itemSizeL, itemSizeH){
+    function getTilePositions(loadoutsTile, itemSizeL, itemSizeH){
+        // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
+        //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
+        let itemPositions = []
+        console.log(`getting positions for tile ${loadoutsTile.id}`)
+        for(let rowNum of Array(loadoutsTile.height/loadoutsTile.parent.grid.size).keys()){
+            for(let colNum of Array(loadoutsTile.width/loadoutsTile.parent.grid.size).keys()){
+                let tilePosition = {
+                    "x1": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size), "y1": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size), 
+                    "x2": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size) + (itemSizeL * loadoutsTile.parent.grid.size), "y2": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size) + (itemSizeH * loadoutsTile.parent.grid.size),
+                }
+                if((tilePosition.x1 + (itemSizeL * loadoutsTile.parent.grid.size) <= loadoutsTile.x + loadoutsTile.width) && (tilePosition.y1 + (itemSizeH * loadoutsTile.parent.grid.size) <= loadoutsTile.y + loadoutsTile.height)){
+                    itemPositions.push(tilePosition)
+                } else {
+                    console.log("Discarded position")
+                }
+            }
+        }
+
+        
+        console.log(tilePositions)
+        
+        // Find any tokens that may already be over the tile's area
+        let blockingTokens = loadoutsTile.parent.tokens.filter(
+            t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
+                 t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
+
+        // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
+        // There is something going on here with the use of the itemSize * gridSize that makes me have to do this extra step of determining 
+        // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
+        for(let blockingToken of blockingTokens){
+            // If the blockingToken is >= the new item, the item should use the filter but with Math.max
+            if(blockingToken.width >= itemSizeL || blockingToken.height > itemSizeH){
+                itemPositions = itemPositions.filter(p => 
+                    p.x1 >= Math.max(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.max(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
+                    )
+            // If the blockingToken is < the new item, the item should use the filter but with Math.min
+            } else {
+                itemPositions = itemPositions.filter(p => 
+                    p.x1 >= Math.min(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
+                    p.y1 >= Math.min(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
+                    )
+            }
+        }
+        return itemPositions;
+    }
+    return [isStacked, selectedTile, tilePositions]
+}
+*/
+
+function processTilePositions(itemDoucment, validTiles, itemOrientation){
+    var tilePositions = [];
+    var selectedTile = null
+    for(const loadoutsTile of validTiles){
+        tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_x, itemOrientation.size_y)
+
+        if(! tilePositions.length){
+            if(itemOrientation.size_x != itemOrientation.size_y){
+                tilePositions = getTilePositions(loadoutsTile, itemOrientation.size_y, itemOrientation.size_x)
+                if(tilePositions.length){
+                    itemOrientation.rotation = 90
+                }
+            }
+        }
+        if(tilePositions.length){
+            selectedTile = loadoutsTile;
+            break;
+        }
+    };
+
+    // Get an array of possible positions for the item to land if nothing was blocking its space
+    function getTilePositions(loadoutsTile, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
@@ -148,6 +255,10 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
                 }
             }
         }
+        // Find any tokens that may already be over the tile's area
+        let blockingTokens = loadoutsTile.parent.tokens.filter(
+            t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
+                 t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
 
         // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
         // There is something going on here with the use of the itemSize * gridSize that makes me have to do this extra step of determining 
@@ -350,7 +461,7 @@ async function addLoadoutsItem(itemDocument) {
     }
 
     // Validate that the item's Loadouts configuration is acceptable
-    if(! validateLoadoutsConfiguration(itemDocument, ["img", "width", "height", "stack"])){
+    if(! validateLoadoutsConfiguration(itemDocument, ["img", "width", "height", "stack[max]"])){
         console.warn("▞▖Loadouts: Managed item " + itemDocument.name + " failed configuration checks. Item will not be linked to a Loadouts token")
         return;
     }
@@ -364,8 +475,7 @@ async function addLoadoutsItem(itemDocument) {
     
     // Get tiles from Loadouts scene that could _potentially_ hold the payload based purely on geometry
     const validTiles = findValidTiles(itemDocument, itemOrientation)
-
-    // Process the preference-sorted array of tiles until we find one that can accommodate the item token
+    console.log(validTiles)
     const [selectedTile, validPositions] = processTilePositions(itemDocument, validTiles, itemOrientation)
 
     performPrePlacementChecks(selectedTile, validPositions, itemOrientation, itemDocument)
