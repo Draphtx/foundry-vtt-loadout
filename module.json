@@ -10,15 +10,12 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.3.2",
-  "minimumCoreVersion": "10.283",
-  "relationships": {
-    "systems": [
-      {
-        "id": "cyberpunk-red-core",
-        "manifest": "https://gitlab.com/cyberpunk-red-team/fvtt-cyberpunk-red-core"
-      }
-    ]
+  "version": "2.3.5",
+  "minimumCoreVersion" : "10.291",
+  "compatibleCoreVersion" : 10,
+  "compatibility": {
+      "minimum": 10,
+      "verified": "10.291"
   },
   "scripts": [
     "scripts/loadoutsHooks.js",
@@ -38,14 +35,6 @@
       "path": "packs/macros/macros.db",
       "type": "Macro",
       "private": false
-    },
-    {
-      "name": "loadouts-compendium-weapon-cpr",
-      "label": "Loadouts Weapons (CPR)",
-      "path": "packs/cyberpunk-red-core/weapon.db",
-      "entity": "Item",
-      "type": "Item",
-      "private": false
     }
   ],
   "media": [
@@ -62,9 +51,5 @@
   "manifest": "#{MANIFEST}#",
   "download": "#{DOWNLOAD}#",
   "license": "LICENSE",
-  "readme": "README.md",
-  "compatibility": {
-    "minimum": "10",
-    "verified": "10"
-  }
+  "readme": "README.md"
 }
