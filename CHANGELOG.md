@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.3.5a
+- Breaking final ties to cyberpunk
+- Minor readme updates
+- Trying to fix manifest compatibility issue
+
 ### 2.3.2a
 - Item stacking support implemented
 - BREAKING changes to item configurations and macros
