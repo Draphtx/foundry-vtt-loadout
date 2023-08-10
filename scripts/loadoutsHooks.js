@@ -32,7 +32,7 @@ function verifyItemSuitability(itemDocument) {
         return false;
     }
 
-    ui.notifications.warn(`Lodouts: cannot add '${itemDocument.name}' to ${itemDocument.parent.name}'s inventory. The GM has disabled the ability \
+    ui.notifications.warn(`Loadouts: cannot add '${itemDocument.name}' to ${itemDocument.parent.name}'s inventory. The GM has disabled the ability \
         to add ${itemDocument.type} items that are not configured for Loadouts.`);
     itemDocument.delete();
     return false;
@@ -99,7 +99,6 @@ function findValidTiles(itemDocument, itemOrientation){
     }
     
     let validTiles = []
-    console.log(`looking for valid tiles: owner "${itemDocument.parent.id}", type "${itemDocument.type}", x: ${itemOrientation.size_x}, y: ${itemOrientation.size_y} `)
     for(let loadoutsScene of loadoutsScenes){
         loadoutsTiles = loadoutsScene.tiles.filter(
             tile => tile.flags.loadouts).filter(
@@ -109,12 +108,10 @@ function findValidTiles(itemDocument, itemOrientation){
                     
                         // If allowedTypes is set but doesn't include itemDocument.system.type, we reject the tile.
                         if (allowedTypes && !allowedTypes.split(',').includes(itemDocument.type)) {
-                            console.log(`reject tile due to type discrepancy`)
                             return false;
                         }
                     
                         // If allowedTypes is null or undefined, or if it includes itemDocument.system.type, we continue with the size check.
-                        console.log(`checking tile size: ${Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size)} can hold ${Math.max(itemOrientation.size_x, itemOrientation.size_y)}?`)
                         return Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(itemOrientation.size_x, itemOrientation.size_y);
                     }
                 )
@@ -215,10 +212,25 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
 }
 
 function updateStack(itemDocument, validStack, loadoutsTile){
-    const existingMembership = [...validStack.flags.loadouts.stack.members];
-    existingMembership.push(itemDocument.id); 
-    validStack.update({flags: {loadouts: {stack: {members: existingMembership}}}});
-    ui.notifications.info(itemDocument.parent.name + " added " + itemDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
+    const membershipIds = [...validStack.flags.loadouts.stack.members];
+    membershipIds.push(itemDocument.id); 
+
+    const updateData = {
+        flags: {
+            loadouts: {
+                stack: {
+                    members: membershipIds
+                }
+            }
+        }
+    };
+
+    if (membershipIds.length > 1) {
+        updateData.overlayEffect = game.settings.get("loadouts", "loadouts-stack-overlay");
+    }
+
+    validStack.update(updateData);
+    ui.notifications.info("Loadouts: " + itemDocument.parent.name + " added " + itemDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
 }
 
 
@@ -287,23 +299,9 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
 
 // Place the itemActor token in the loadout scene
 async function placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument){
-    
-    // We will set the token's disposition value based on the item's quality
-    const dispositionMap = {
-        "poor": -1, 
-        "standard": 0, 
-        "excellent": 1
-    }    
-    const statusIconMap = {
-        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
-        "carried": "",
-        "owned": ""
-    }
-
     let itemTokenSettings = {
         name: itemDocument.name,
         actorLink: false,
-        disposition: dispositionMap[itemDocument.system.quality],
         displayName: 30,
         system: {
             equipped: selectedTile.flags.loadouts.state
@@ -333,29 +331,6 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         lockRotation: true
     }
 
-
-    // Set the token's 'health' bar to represent magazine contents, if available
-    // TODO: Look at giving each weapon actor one of its own items in its inventory; then we can use the
-    //// magazine attribute to fill the bars instead of hijacking hp
-    if(("magazine" in itemDocument.system) && (itemDocument.system.magazine.max != 0)){
-        itemTokenSettings.displayBars = 50;  // Set visibility for the 'hp' bar
-        itemTokenSettings.actorData = {
-            system: {
-                derivedStats: {
-                    hp: {
-                        max: itemDocument.system.magazine.max,
-                        value: itemDocument.system.magazine.value
-                    }
-                }
-            }
-        }
-    }
-
-    // Set equipped state overlays where desired
-    if(itemDocument.system.equipped){
-        itemTokenSettings.overlayEffect = statusIconMap[itemDocument.system.equipped]
-    }
-
     // Define the tokenDocument settings for the itemActor
     itemTokenDoc = await itemDocument.parent.getTokenDocument(itemTokenSettings)
 
@@ -363,14 +338,14 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
     const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
 
     // Send notifications
-    if(selectedTile.flags.loadouts.state == "owned"){
+    if(selectedTile.flags.loadouts.state == "remote"){
         ui.notifications.warn(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            "Loadouts: added " + itemDocument.name + " to " + itemDocument.parent.name + "'s remote " + 
             selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "', which is not carried"
             )
     } else {
         ui.notifications.info(
-            "Added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
+            "Loadouts: added " + itemDocument.name + " to " + itemDocument.parent.name + "'s " + 
             selectedTile.flags.loadouts.type + " in '" + selectedTile.parent.name + "'"
             )
     }
@@ -430,7 +405,7 @@ async function removeLoadoutsItem(itemDocument) {
     }
 
     if (!loadoutsItemToken) {
-        ui.notifications.warn(`Unable to find Loadouts token related to ${itemDocument.id} on any Loadouts scene`);
+        console.error(`▞▖Loadouts: unable to find Loadouts token related to ${itemDocument.id} on any Loadouts scene`);
         return;
     } else {
         // Remove the itemDocument.id from the members array
@@ -444,71 +419,18 @@ async function removeLoadoutsItem(itemDocument) {
         if (membersArray.length > 0) {
             loadoutsItemToken.update({ "flags.loadouts.stack.members": membersArray });
             ui.notifications.info(`Loadouts: ${itemDocument.parent.name} removed '${itemDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
+            if(membersArray.length == 1){
+                loadoutsItemToken.update({overlayEffect: ""})
+            }
         } else {
             // If the members array is empty after removal, delete the token
-            ui.notifications.info(`Removed '${itemDocument.name}' from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+            ui.notifications.info(`Loadouts: removed '${itemDocument.name}' from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
             loadoutsItemToken.delete();
         }
     }
 
     Hooks.off("deleteItem");
 }
-
-
-
-// UPDATE ITEM HOOK
-//// Updates item tokens' 'health' bar when a weapon magazine changes states
-Hooks.on("updateItem", (document, options, userid) => updateLoadoutsItem(document));
-
-async function updateLoadoutsItem(itemDocument) {
-    if (!itemDocument.parent) return;
-
-    if (!itemDocument.flags.loadouts || !itemDocument.flags.loadouts.configured) return;
-
-    const loadoutsScenes = game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
-
-    let loadoutsItemToken;
-    for (const loadoutsScene of loadoutsScenes) {
-        loadoutsItemToken = game.scenes.get(loadoutsScene.id).tokens.contents.find(token => 
-            token.flags.loadouts?.stacks?.members?.includes(itemDocument.id)
-        );
-        if (loadoutsItemToken) break;
-    }
-
-    if (!loadoutsItemToken) {
-        console.warn(`▞▖Loadouts: Loadouts item not found; cannot reflect ${itemDocument.parent.name}'s inventory change`);
-        return;
-    }
-
-    if (itemDocument.system.magazine.max !== 0) {
-        loadoutsItemToken.update({
-            actorData: {
-                system: {
-                    derivedStats: {
-                        hp: {
-                            value: itemDocument.system.magazine.value
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    const statusIconMap = {
-        "equipped": "modules/loadouts/artwork/icons/status-equipped.webp",
-        "carried": "",
-        "owned": ""
-    };
-
-    if (itemDocument.system.equipped) {
-        loadoutsItemToken.update({
-            overlayEffect: statusIconMap[itemDocument.system.equipped]
-        });
-    }
-
-    Hooks.off("updateItem");
-}
-
 
 // UPDATE TOKEN HOOK
 //// Updates a linked item's equip state based on the which Loadouts tile it lands on when moved by a player
@@ -560,16 +482,6 @@ function updateLoadoutsToken(tokenDocument, diff, scene, userId){
         return;
     }
 
-    // Update the inventory item's equipped/carried/owned status to reflect the tile on which it was placed
-    for(const itemId of linkedItems){
-        inventoryItem = tokenOwner.items.get(itemId)
-        if(selectedTile.flags.loadouts.state == inventoryItem.system.equipped){
-        } else {
-            inventoryItem.update({system:{equipped: selectedTile.flags.loadouts.state}})
-            ui.notifications.info("Loadouts: set " + inventoryItem.name + "equipped state to " + selectedTile.flags.loadouts.state + " to reflect new tile location.")
-        }
-    };
-    
     Hooks.off("updateToken")
     return;
 }
