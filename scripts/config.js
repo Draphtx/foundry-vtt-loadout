@@ -69,6 +69,16 @@ Hooks.once("init", function () {
         type: Boolean
     });
 
+    // Stacked item overlay icon
+    game.settings.register("loadouts", "loadouts-stack-overlay", {
+        name: "Stacks Overlay Icon",
+        hint: "Set a custom icon for stacked Loadouts items",
+        scope: "world",
+        config: true,
+        default: "modules/loadouts/artwork/overlays/stack-overlay.webp",
+        type: String
+    });
+
 });
 
 

@@ -39,11 +39,10 @@ const loadoutsTileDialog = new Dialog({
       <input type='text' name='storageName' maxLength='50' placeholder="defaults to 'storage'"></input>
     </div>
   
-    <label for="stateSelect">Equipped State</label>
+    <label for="stateSelect">Carried State</label>
       <select name="stateSelect">
         <option value="carried">carried</option>
-        <option value="owned">owned</option>
-        <option value="equipped">equipped</option>
+        <option value="remote">owned</option>
       </select>
     </div>
 
