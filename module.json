@@ -12,6 +12,14 @@
   ],
   "version": "2.3.2",
   "minimumCoreVersion": "10.283",
+  "relationships": {
+    "systems": [
+      {
+        "id": "cyberpunk-red-core",
+        "manifest": "https://gitlab.com/cyberpunk-red-team/fvtt-cyberpunk-red-core"
+      }
+    ]
+  },
   "scripts": [
     "scripts/loadoutsHooks.js",
     "scripts/config.js"
