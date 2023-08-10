@@ -1,4 +1,4 @@
-Hooks.once("init", function () {
+Hooks.once("ready", function () {
     
     // Get all item types for the configuration option
     let systemItemTypes = new Set();
