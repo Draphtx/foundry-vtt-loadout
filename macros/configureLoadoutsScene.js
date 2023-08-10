@@ -6,20 +6,10 @@ const loadoutsTileDialog = new Dialog({
     <form>
       <div class="form-group">
         <label>Loadouts Name</label>
-        <input type='text' name='loadoutsName'></input>
+        <input type='text' placeholder='Leave empty to use Foundry scene name' name='loadoutsName'></input>
       </div>
     </form>
-    <div class="form-group">
-        <label for="weightSelect">Preference Weight</label>
-        <select name="weightSelect">
-          <option value=0>0</option>
-          <option value=1>1</option>
-          <option value=2>2</option>
-          <option value=3>3</option>
-          <option value=4>4</option>
-          <option value=5>5</option>
-        </select>
-      </div>`,
+    `,
       buttons: {
         cancel: {
             icon: "<i class='fas fa-check'></i>",
@@ -42,8 +32,7 @@ async function setupLoadoutsScene(loadoutsName, loadoutsWeight){
     currentScene.update({
         "flags.loadouts": {
             "isLoadoutsScene": true,
-            "name": loadoutsName,
-            "weight": loadoutsWeight
+            "name": loadoutsName ? allowedTypes : null
         }
     })
 }

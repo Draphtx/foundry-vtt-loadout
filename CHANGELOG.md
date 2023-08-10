@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.3.2a
+- Item stacking support implemented
+- BREAKING changes to item configurations and macros
+- System agnosticism for core module (!!)
+
 ### 2.2.3a
 - Fixed some bugs with placement after dynamic token changes
 - Created compendium of weapon items pre-configured for Loadouts/CPR

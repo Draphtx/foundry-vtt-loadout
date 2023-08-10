@@ -216,6 +216,7 @@ function updateStack(itemDocument, validStack, loadoutsTile){
     membershipIds.push(itemDocument.id); 
 
     const updateData = {
+        name: `${validStack.name} (x${membershipIds.length})`,
         flags: {
             loadouts: {
                 stack: {
@@ -303,9 +304,6 @@ async function placeItemActor(selectedTile, validPositions, itemOrientation, ite
         name: itemDocument.name,
         actorLink: false,
         displayName: 30,
-        system: {
-            equipped: selectedTile.flags.loadouts.state
-        },
         flags: {
             loadouts: {
                 "managed": true,
@@ -417,10 +415,21 @@ async function removeLoadoutsItem(itemDocument) {
 
         // If the members array isn't empty, update the token's members array
         if (membersArray.length > 0) {
-            loadoutsItemToken.update({ "flags.loadouts.stack.members": membersArray });
+            loadoutsItemToken.update({
+                flags: {
+                    loadouts: {
+                        stack: {
+                            members: membersArray}
+                        }
+                    },
+                name: `${itemDocument.name} (x${membersArray.length})`,
+                });
             ui.notifications.info(`Loadouts: ${itemDocument.parent.name} removed '${itemDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
             if(membersArray.length == 1){
-                loadoutsItemToken.update({overlayEffect: ""})
+                loadoutsItemToken.update({
+                    overlayEffect: "",
+                    name: itemDocument.name,
+                })
             }
         } else {
             // If the members array is empty after removal, delete the token
