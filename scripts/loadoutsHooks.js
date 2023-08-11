@@ -38,7 +38,6 @@ function verifyItemSuitability(itemDocument) {
     return false;
 }
 
-
 // Check whether the item's Loadouts configuration contains any errors
 function validateLoadoutsConfiguration(itemDocument, fields) {
     const itemFlags = itemDocument.flags.loadouts;
@@ -254,7 +253,7 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                     add: {
                     icon: '<i class="fas fa-times"></i>',
                     label: "Add Item",
-                    callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
+                    callback: function(){ placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument) }
                     }
                 },
                 default: "drop"
@@ -282,7 +281,7 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
                     add: {
                     icon: '<i class="fas fa-times"></i>',
                     label: "Add Item",
-                    callback: function(){ placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument) }
+                    callback: function(){ placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument) }
                     }
                 },
                 default: "drop"
@@ -294,46 +293,60 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
             return false;
         }
     } else {
-        placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument)
+        placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument)
     }    
 }
 
-// Place the itemActor token in the loadout scene
-async function placeItemActor(selectedTile, validPositions, itemOrientation, itemDocument){
-    let itemTokenSettings = {
-        name: itemDocument.name,
-        actorLink: false,
-        displayName: 30,
-        flags: {
-            loadouts: {
-                "managed": true,
-                "linked": true,
-                "owner": itemDocument.parent.id,
-                "stack": {
-                    "max": itemDocument.flags?.loadouts?.stack?.max,
-                    "members": [itemDocument.id]
-                }
-            }
-        },
-        texture: {
-            src: itemDocument.flags.loadouts.img,
-            // Incorporate the rotation checks right here
-            scaleX: itemOrientation.rotation ? itemOrientation.size_y : undefined,
-            scaleY: itemOrientation.rotation ? itemOrientation.size_y : undefined
-        },
-        width: itemOrientation.rotation ? itemOrientation.size_y : itemOrientation.size_x,
-        height: itemOrientation.rotation ? itemOrientation.size_x : itemOrientation.size_y,
-        x: validPositions[0].x1,
-        y: validPositions[0].y1,
-        rotation: itemOrientation.rotation,
-        lockRotation: true
+class LoadoutsToken {
+    constructor(selectedTile, selectedPosition, itemOrientation, itemDocument) {
+        this.selectedTile = selectedTile;
+        this.selectedPosition = selectedPosition;
+        this.itemOrientation = itemOrientation;
+        this.itemDocument = itemDocument;
     }
 
-    // Define the tokenDocument settings for the itemActor
-    itemTokenDoc = await itemDocument.parent.getTokenDocument(itemTokenSettings)
+    defineToken() {
+        this.itemTokenSettings = {
+            name: this.itemDocument.name,
+            actorLink: false,
+            displayName: 30,
+            flags: {
+                loadouts: {
+                    "managed": true,
+                    "linked": true,
+                    "owner": this.itemDocument.parent.id,
+                    "stack": {
+                        "max": this.itemDocument.flags?.loadouts?.stack?.max,
+                        "members": [this.itemDocument.id]
+                    }
+                }
+            },
+            texture: {
+                src: this.itemDocument.flags.loadouts.img,
+                // Incorporate the rotation checks right here
+                scaleX: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined,
+                scaleY: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined
+            },
+            width: this.itemOrientation.rotation ? this.itemOrientation.size_y : this.itemOrientation.size_x,
+            height: this.itemOrientation.rotation ? this.itemOrientation.size_x : this.itemOrientation.size_y,
+            x: this.selectedPosition.x1,
+            y: this.selectedPosition.y1,
+            rotation: this.itemOrientation.rotation,
+            lockRotation: true
+        }
+    }
 
-    // Create the token in the loadout scene
-    const addedToken = await selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDoc])
+    async placeToken() {
+        let itemTokenDocument = await this.itemDocument.parent.getTokenDocument(this.itemTokenSettings);
+        const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
+    }
+}
+
+// Place the itemToken token in the loadout scene
+async function placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument){
+    itemToken = new loadoutsToken(selectedTile, validPositions[0], itemOrientation, itemDocument);
+    itemToken.defineToken();
+    itemToken.placeToken();
 
     // Send notifications
     if(selectedTile.flags.loadouts.state == "remote"){
