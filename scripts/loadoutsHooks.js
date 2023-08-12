@@ -52,6 +52,8 @@ window.LoadoutsRegistry = window.LoadoutsRegistry || {
     }
 };
 
+Hooks.call('loadoutsReady'); // Let child modules know that they may register their class extensions
+
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
