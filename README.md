@@ -1,4 +1,5 @@
 # foundry-vtt-loadouts
+![Foundry VTT Loadouts](artwork/module/loadouts-cover.png)
 ## A Visual Inventory system for Foundry VTT
 Loadouts allows the GM to create visual Loadouts of any variety and style that are updated by and interact with the character's normal inventory actions.
 
