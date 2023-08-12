@@ -1,5 +1,57 @@
 console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:14px');
 
+class LoadoutsToken {
+    constructor(selectedTile, selectedPosition, itemOrientation, itemDocument) {
+        this.selectedTile = selectedTile;
+        this.selectedPosition = selectedPosition;
+        this.itemOrientation = itemOrientation;
+        this.itemDocument = itemDocument;
+    }
+
+    defineToken() {
+        this.itemTokenSettings = {
+            name: this.itemDocument.name,
+            actorLink: false,
+            displayName: 30,
+            flags: {
+                loadouts: {
+                    "managed": true,
+                    "linked": true,
+                    "owner": this.itemDocument.parent.id,
+                    "stack": {
+                        "max": this.itemDocument.flags?.loadouts?.stack?.max,
+                        "members": [this.itemDocument.id]
+                    }
+                }
+            },
+            texture: {
+                src: this.itemDocument.flags.loadouts.img,
+                // Incorporate the rotation checks right here
+                scaleX: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined,
+                scaleY: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined
+            },
+            width: this.itemOrientation.rotation ? this.itemOrientation.size_y : this.itemOrientation.size_x,
+            height: this.itemOrientation.rotation ? this.itemOrientation.size_x : this.itemOrientation.size_y,
+            x: this.selectedPosition.x1,
+            y: this.selectedPosition.y1,
+            rotation: this.itemOrientation.rotation,
+            lockRotation: true
+        }
+    }
+
+    async placeToken() {
+        let itemTokenDocument = await this.itemDocument.parent.getTokenDocument(this.itemTokenSettings);
+        const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
+    }
+}
+
+window.LoadoutsRegistry = window.LoadoutsRegistry || {
+    tokenClass: LoadoutsToken, // Default class
+    registerTokenClass: function(systemName, tokenClass) {
+        this.tokenClass = tokenClass;
+    }
+};
+
 // CREATE ITEM HOOK
 //// Responsible for adding items to a character's loadout when (applicable) items are added to the 
 //// character's inventory in the character sheet.
@@ -297,54 +349,17 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
     }    
 }
 
-class LoadoutsToken {
-    constructor(selectedTile, selectedPosition, itemOrientation, itemDocument) {
-        this.selectedTile = selectedTile;
-        this.selectedPosition = selectedPosition;
-        this.itemOrientation = itemOrientation;
-        this.itemDocument = itemDocument;
-    }
-
-    defineToken() {
-        this.itemTokenSettings = {
-            name: this.itemDocument.name,
-            actorLink: false,
-            displayName: 30,
-            flags: {
-                loadouts: {
-                    "managed": true,
-                    "linked": true,
-                    "owner": this.itemDocument.parent.id,
-                    "stack": {
-                        "max": this.itemDocument.flags?.loadouts?.stack?.max,
-                        "members": [this.itemDocument.id]
-                    }
-                }
-            },
-            texture: {
-                src: this.itemDocument.flags.loadouts.img,
-                // Incorporate the rotation checks right here
-                scaleX: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined,
-                scaleY: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined
-            },
-            width: this.itemOrientation.rotation ? this.itemOrientation.size_y : this.itemOrientation.size_x,
-            height: this.itemOrientation.rotation ? this.itemOrientation.size_x : this.itemOrientation.size_y,
-            x: this.selectedPosition.x1,
-            y: this.selectedPosition.y1,
-            rotation: this.itemOrientation.rotation,
-            lockRotation: true
-        }
-    }
-
-    async placeToken() {
-        let itemTokenDocument = await this.itemDocument.parent.getTokenDocument(this.itemTokenSettings);
-        const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
-    }
-}
-
 // Place the itemToken token in the loadout scene
 async function placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument){
-    itemToken = new loadoutsToken(selectedTile, validPositions[0], itemOrientation, itemDocument);
+    
+    function createTokenForSystem(systemName, ...args) {
+        const TokenClass = LoadoutsRegistry[systemName] || LoadoutsToken;
+        return new TokenClass(...args);
+    }
+    
+    const itemToken = createTokenForSystem(game.system.id, selectedTile, validPositions[0], itemOrientation, itemDocument);
+    
+    // itemToken = new LoadoutsToken(selectedTile, validPositions[0], itemOrientation, itemDocument);
     itemToken.defineToken();
     itemToken.placeToken();
 
