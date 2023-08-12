@@ -46,11 +46,17 @@ class LoadoutsToken {
 }
 
 window.LoadoutsRegistry = window.LoadoutsRegistry || {
-    tokenClass: LoadoutsToken, // Default class
+    tokenClasses: {
+        default: LoadoutsToken // Default class
+    },
     registerTokenClass: function(systemName, tokenClass) {
-        this.tokenClass = tokenClass;
+        this.tokenClasses[systemName] = tokenClass;
+    },
+    getTokenClass: function(systemName) {
+        return this.tokenClasses[systemName] || this.tokenClasses.default;
     }
 };
+
 
 Hooks.call('loadoutsReady'); // Let child modules know that they may register their class extensions
 
@@ -355,7 +361,7 @@ function performPrePlacementChecks(selectedTile, validPositions, itemOrientation
 async function placeItemToken(selectedTile, validPositions, itemOrientation, itemDocument){
     
     function createTokenForSystem(systemName, ...args) {
-        const TokenClass = LoadoutsRegistry[systemName] || LoadoutsToken;
+        const TokenClass = LoadoutsRegistry.getTokenClass(systemName) || LoadoutsToken;
         return new TokenClass(...args);
     }
     
