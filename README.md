@@ -1,14 +1,13 @@
 # foundry-vtt-loadouts
+![Foundry VTT Loadouts](artwork/module/loadouts-cover.png)
 ## A Visual Inventory system for Foundry VTT
 Loadouts allows the GM to create visual Loadouts of any variety and style that are updated by and interact with the character's normal inventory actions.
 
 The goal of Loadouts is to allow GMs and players to better visualize their character's weaponry, dress, and other visual elements that normally go unchecked in VTT games but which may provide a great deal of additional character and narrative development opportunities. Also it's fun.
 
-![Early Alpha Example in CPR](artwork/module/ammo-mgmt.gif)
-## Additional context
-Current work is atop the Cyberpunk Red Core system. System agnosticism is a high-priority, but releases for supported systems will include compendiums of pre-configured items.
+Current work is atop the Cyberpunk Red Core system, but as of alpha 2.3+ we are system-agnostic and in the future, system-specific resources including extended functionality and preconfigured items will be made available.
 
-The idea is to give the GM a quick way to see what the party 'looks' like in-game. The worlds of Cyberpunk and, nominally, fantasy environments place a lot of emphasis on the way that characters present to others; a heavily-armed party dressed like Rockerboys with guns strapped to every inch of their bodies would evoke a very different response than a well-dressed, low-key crew. Yet without any visual cues, it is easy for both players and GMs to overlook the visual 'state' of a character. It also means that characters rarely change clothing or armor, as there is little purpose outside of enforced mechanics.
+![Early Alpha Example in CPR](artwork/module/ammo-mgmt.gif)
 
 ## How it works
 When items that have been configured for Loadouts are added to a player's inventory, a token-based representation of that item is added to a dedicated Loadouts Foundry scene. This scene contains Loadouts tiles that can be assigned different properties, including player ownership and type of allowed item, and which represent the player's inventory 'slots.'
@@ -22,12 +21,12 @@ _As this is in an alpha stage and many customization elements are still in devel
 2. Use the included macro `setLoadoutsScene` to flag the current scene as a Loadouts scene.
 3. Populate the scene with rectangular tiles that represent grid-based inventories.
 4. Select one or more tiles and use the included macro `setLoadoutsTiles` to configure them as Loadouts tiles. This will allow you to determine which player owns the inventory as well as what sorts of items should be stored there.
-5. Configure Loadouts items using the `setLoadoutsItems` macro or import any included compendiums for your system to use the preconfigured items (Cyberpunk Red weapons only, currently). This will let you set or modify the size, image path, and stack quantity of the item's representative token.
+5. Configure Loadouts items using the `setLoadoutsItems` macro. This will let you set or modify the size, image path, and stack quantity of the item's representative token. Additional modules with preconfigured items and scenes will be made available for various systems.
 6. Consult the configuration options in the main Foundry `Configure Settings` window.
 
 # Configuration Options
 ## System-Wide
-`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. For Cyberpunk Red this would include options like weapons, ammunition, and cyberware.
+`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. For Cyberpunk Red this would include options like weapons, ammo, and cyberware.
 
 `Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts.
 

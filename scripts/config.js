@@ -1,4 +1,4 @@
-Hooks.once("init", function () {
+Hooks.once("ready", function () {  // Due to some of the calls we make to populate lists, this can't register at init time
     
     // Get all item types for the configuration option
     let systemItemTypes = new Set();
