@@ -1,53 +1,11 @@
+import { LoadoutsToken } from './loadoutsToken.js';
 console.log('%c▞▖ Foundry VTT Loadouts Initialized ▞▖', 'color:#FFFFFF; background:#72e8c4; padding:10px; border-radius:5px; font-size:14px');
 
-class LoadoutsToken {
-    constructor(selectedTile, selectedPosition, itemOrientation, itemDocument) {
-        this.selectedTile = selectedTile;
-        this.selectedPosition = selectedPosition;
-        this.itemOrientation = itemOrientation;
-        this.itemDocument = itemDocument;
-    }
-
-    defineToken() {
-        this.itemTokenSettings = {
-            name: this.itemDocument.name,
-            actorLink: false,
-            displayName: 30,
-            flags: {
-                loadouts: {
-                    "managed": true,
-                    "linked": true,
-                    "owner": this.itemDocument.parent.id,
-                    "stack": {
-                        "max": this.itemDocument.flags?.loadouts?.stack?.max,
-                        "members": [this.itemDocument.id]
-                    }
-                }
-            },
-            texture: {
-                src: this.itemDocument.flags.loadouts.img,
-                // Incorporate the rotation checks right here
-                scaleX: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined,
-                scaleY: this.itemOrientation.rotation ? this.itemOrientation.size_y : undefined
-            },
-            width: this.itemOrientation.rotation ? this.itemOrientation.size_y : this.itemOrientation.size_x,
-            height: this.itemOrientation.rotation ? this.itemOrientation.size_x : this.itemOrientation.size_y,
-            x: this.selectedPosition.x1,
-            y: this.selectedPosition.y1,
-            rotation: this.itemOrientation.rotation,
-            lockRotation: true
-        }
-    }
-
-    async placeToken() {
-        let itemTokenDocument = await this.itemDocument.parent.getTokenDocument(this.itemTokenSettings);
-        const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
-    }
-}
-
+// This registry lets child modules register with Loadouts for extended functionality.
+// This is also where we will register our default class.
 window.LoadoutsRegistry = window.LoadoutsRegistry || {
     tokenClasses: {
-        default: LoadoutsToken // Default class
+        default: LoadoutsToken
     },
     registerTokenClass: function(systemName, tokenClass) {
         this.tokenClasses[systemName] = tokenClass;
@@ -56,7 +14,6 @@ window.LoadoutsRegistry = window.LoadoutsRegistry || {
         return this.tokenClasses[systemName] || this.tokenClasses.default;
     }
 };
-
 
 Hooks.call('loadoutsReady'); // Let child modules know that they may register their class extensions
 
@@ -202,11 +159,6 @@ function processTilePositions(itemDocument, validTiles, itemOrientation){
             if(validStacks.length > 0){
                 updateStack(itemDocument, validStacks[0], loadoutsTile);
                 isStacked = true;
-                itemDocument.update({  // Ensure that the item is in the appropriate equipped state for the stack
-                    system: {
-                        equipped: loadoutsTile.flags.loadouts.state
-                    }
-                });
                 break;
             }
         }
@@ -484,9 +436,7 @@ Hooks.on("updateToken", (document, diff, sceneId, userId) => updateLoadoutsToken
 function updateLoadoutsToken(tokenDocument, diff, scene, userId){
     // Do not respond to updateToken events unless the token is a Loadouts token, the scene is a Loadouts scene, 
     //// and there has been token movement
-    if((! tokenDocument.parent.flags.loadouts) || 
-        (! tokenDocument.parent.flags.loadouts.isLoadoutsScene) || 
-        (! tokenDocument.flags.loadouts) || ((! diff.x > 0) && (! diff.y > 0))){
+    if((! tokenDocument.parent.flags?.loadouts?.isLoadoutsScene) || (! tokenDocument.flags.hasOwnProperty('loadouts')) || ((! diff.x > 0) && (! diff.y > 0))){
         return;
     }
 
