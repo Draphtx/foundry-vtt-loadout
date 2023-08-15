@@ -261,4 +261,72 @@ class LoadoutsToken {
         let itemTokenDocument = await this.itemDocument.parent.getTokenDocument(this.itemTokenSettings);
         const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
     };
+
+    locateRemovedItem(){
+        function getLoadoutsScenes() {
+            return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
+        };
+        
+        function findItemTokenInScene(scene) {
+            return scene.tokens.contents.find(token => 
+                token.flags.loadouts?.stack?.members?.includes(itemDocument.id)
+            );
+        };
+        
+        function findItemTokenAcrossScenes(scenes) {
+            let loadoutsItemToken = false;
+            for (const loadoutsScene of scenes) {
+                loadoutsItemToken = findItemTokenInScene(itemDocument.id);
+                if (loadoutsItemToken) break;
+            };
+            return loadoutsItemToken;
+        };
+    };
+
+    removeLoadoutsItem(){
+        const membersArray = this.loadoutsItemToken.flags.loadouts.stack.members;
+        const index = membersArray.indexOf(this.itemDocument.id);
+        
+        if (index > -1) {
+            membersArray.splice(index, 1);
+        };
+
+        if (membersArray.length > 0) {
+            loadoutsItemToken.update({
+                flags: {
+                    loadouts: {
+                        stack: {
+                            members: membersArray}
+                        }
+                    },
+                name: `${itemDocument.name} (x${membersArray.length})`,
+                });
+            ui.notifications.info(`Loadouts: ${itemDocument.parent.name} removed '${itemDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
+            if(membersArray.length == 1){
+                loadoutsItemToken.update({
+                    overlayEffect: "",
+                    name: itemDocument.name,
+                })
+            };
+        } else {
+            this.removeLoadoutsToken()
+        };
+    };
+    
+    removeLoadoutsToken(){
+        ui.notifications.info(`Loadouts: removed '${itemDocument.name}' from ${itemDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+        this.loadoutsItemToken.delete();
+    };
+
+    processRemovedItem(){
+        if (!this.itemDocument.flags.loadouts){return};
+    
+        this.loadoutsRemovedItemToken = this.locateRemovedItem()
+        if(!this.loadoutsRemovedItemToken){
+            console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${itemDocument.id} on any Loadouts scene`);
+            return;
+        } else {
+            this.removeLoadoutsItem();
+        };
+    };
 };
