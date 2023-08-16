@@ -153,7 +153,11 @@ export class LoadoutsItem extends LoadoutsObject {
         };
 
         // Otherwise, try to create a new token
-        const loadoutsToken = new LoadoutsToken(this.objectDocument);
+        function createTokenForSystem(systemName, ...args) {
+            const TokenClass = LoadoutsRegistry.getTokenClass(systemName) || LoadoutsToken;
+            return new TokenClass(...args);
+        }
+        const loadoutsToken = createTokenForSystem(game.system.id, this.objectDocument);
         loadoutsToken.createNewToken();
     };
 
