@@ -17,7 +17,7 @@ class LoadoutsObject {
         
         let validTiles = []
         for(let loadoutsScene of loadoutsScenes){
-            loadoutsTiles = loadoutsScene.tiles.filter(
+            let loadoutsTiles = loadoutsScene.tiles.filter(
                 tile => tile.flags.loadouts).filter(
                     tile => tile.flags.loadouts.owner == this.objectDocument.parent.id).filter(
                         tile => {
@@ -41,10 +41,10 @@ class LoadoutsObject {
 };
 
 class LoadoutsItem extends LoadoutsObject {
-    constructor(doc, _, userId) {
+    constructor(objectDocument, _, userId) {
         super(objectDocument)
         this.itemRotation = 0;
-        this.isStack = objectDocument.flags?.loadouts?.stack?.max > 1;
+        this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 1;
     };
 
     verifyItemSuitability() {
@@ -79,22 +79,24 @@ class LoadoutsItem extends LoadoutsObject {
         return false;
     };
 
-    findValidStack(){
+    findValidStack() {
         function isInLoadoutsTileArea(token, tile) {
             return token.x >= tile.x && token.x <= (tile.x + tile.width) &&
                     token.y >= tile.y && token.y <= (tile.y + tile.height);
         };
-
-        function isValidStack(token) {
+    
+        const isValidStack = (token) => {
             return token.name == this.objectDocument.name && 
-                    (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
+                   (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
         };
         
-        for(const loadoutsTile of this.validTiles){
+        for (const loadoutsTile of this.validTiles) {
             let validStacks = loadoutsTile.parent.tokens.filter(
-                t => isInLoadoutsTileArea(t, loadoutsTile) && isValidStack(t, this.objectDocument));
-            if(validStacks.length){
-                return [loadoutsTile, loadoutsStack];
+                t => isInLoadoutsTileArea(t, loadoutsTile) && isValidStack(t)
+            );
+            
+            if (validStacks.length) {
+                return [loadoutsTile, validStacks[0]];
             };
         };
         return [false, false]
@@ -102,7 +104,7 @@ class LoadoutsItem extends LoadoutsObject {
 
     updateStack(loadoutsTile, loadoutsStack){
         const membershipIds = [...loadoutsStack.flags.loadouts.stack.members];
-        membershipIds.push(objectDocument.id); 
+        membershipIds.push(this.objectDocument.id); 
     
         const updateData = {
             name: `${loadoutsStack.name} (x${membershipIds.length})`,
@@ -151,33 +153,37 @@ class LoadoutsItem extends LoadoutsObject {
         };
 
         // Otherwise, try to create a new token
-        const loadoutsToken = new LoadoutsToken(objectDocument);
+        const loadoutsToken = new LoadoutsToken(this.objectDocument);
         loadoutsToken.createNewToken();
     };
 
-    locateRemovedItem(){
-        function getLoadoutsScenes() {
+    locateRemovedItem() {
+        const getLoadoutsScenes = () => {
             return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
         };
         
-        function findItemTokenInScene(scene) {
+        const findItemTokenInScene = (scene) => {
             return scene.tokens.contents.find(token => 
-                token.flags.loadouts?.stack?.members?.includes(objectDocument.id)
+                token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
             );
         };
         
-        function findItemTokenAcrossScenes(scenes) {
-            let loadoutsItemToken = false;
+        const findItemTokenAcrossScenes = (scenes) => {
+            let loadoutsItemToken = null; // Initialized to null instead of false for clarity
             for (const loadoutsScene of scenes) {
-                loadoutsItemToken = findItemTokenInScene(objectDocument.id);
+                loadoutsItemToken = findItemTokenInScene(loadoutsScene);
                 if (loadoutsItemToken) break;
             };
             return loadoutsItemToken;
         };
+        
+        const loadoutsScenes = getLoadoutsScenes();
+        this.removedItemToken = findItemTokenAcrossScenes(loadoutsScenes);
     };
+    
 
     removeLoadoutsItem(){
-        const membersArray = this.loadoutsItemToken.flags.loadouts.stack.members;
+        const membersArray = this.removedItemToken.flags.loadouts.stack.members;
         const index = membersArray.indexOf(this.objectDocument.id);
         
         if (index > -1) {
@@ -185,24 +191,24 @@ class LoadoutsItem extends LoadoutsObject {
         };
 
         if (membersArray.length > 0) {
-            loadoutsItemToken.update({
+            this.removedItemToken.update({
                 flags: {
                     loadouts: {
                         stack: {
                             members: membersArray}
                         }
                     },
-                name: `${objectDocument.name} (x${membersArray.length})`,
+                name: `${this.objectDocument.name} (x${membersArray.length})`,
                 });
-            ui.notifications.info(`Loadouts: ${objectDocument.parent.name} removed '${objectDocument.name}' from a stack in '${loadoutsItemToken.parent.name}'`);
+            ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
             if(membersArray.length == 1){
-                loadoutsItemToken.update({
+                this.removedItemToken.update({
                     overlayEffect: "",
-                    name: objectDocument.name,
+                    name: this.objectDocument.name,
                 })
             };
         } else {
-            const loadoutsToken = new LoadoutsToken(objectDocument);
+            const loadoutsToken = new LoadoutsToken(this.removedItemToken);
             loadoutsToken.removeLoadoutsToken();
         };
     };
@@ -210,9 +216,9 @@ class LoadoutsItem extends LoadoutsObject {
     processRemovedItem(){
         if (!this.objectDocument.flags.loadouts){ return; };
     
-        this.loadoutsRemovedItemToken = this.locateRemovedItem()
-        if(!this.loadoutsRemovedItemToken){
-            console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${objectDocument.id} on any Loadouts scene`);
+        this.locateRemovedItem()
+        if(!this.removedItemToken){
+            console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
             return;
         } else {
             this.removeLoadoutsItem();
@@ -221,10 +227,10 @@ class LoadoutsItem extends LoadoutsObject {
 };
 
 class LoadoutsToken extends LoadoutsObject {
-    constructor(tokenDocument, updateData, options, userId) {
+    constructor(objectDocument, updateData, diffData, userId) {
         super(objectDocument);
+        this.diffData = diffData;
         this.updateData = updateData;
-        this.options = options;
         this.userId = userId;
         this.triggeringUser = game.users.find(user => user.id == this.userId);
         this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
@@ -233,7 +239,7 @@ class LoadoutsToken extends LoadoutsObject {
     processUpdatedToken(){
         if((! this.objectDocument.parent.flags?.loadouts?.isLoadoutsScene) || 
             (! this.objectDocument.flags.hasOwnProperty('loadouts')) || 
-            ((! options.x > 0) && (! options.y > 0))){ return; };
+            ((! this.updateData.x > 0) && (! this.updateData.y > 0))){ return; };
     
         // Find the actor who owns the item linked to the Loadouts token
         if((this.tokenOwner == null) || (this.tokenOwner == undefined)){
@@ -246,16 +252,16 @@ class LoadoutsToken extends LoadoutsObject {
             return;
         }
 
-        linkedItems = this.objectDocument.flags.loadouts.stack.members
+        const linkedItems = this.objectDocument.flags.loadouts.stack.members
         if(!linkedItems.length > 0){
-            console.warn("▞▖Loadouts: unable to find item(s) associated with a token recently updated by " + triggeringUser.name)
+            console.warn("▞▖Loadouts: unable to find item(s) associated with a token recently updated by " + this.triggeringUser.name)
             return;
         }
         
         // Find Loadouts tiles owned by the item's owner
         let validTiles = this.objectDocument.parent.tiles.filter(
             tile => tile.flags.loadouts).filter(
-                tile => tile.flags.loadouts.owner == tokenOwner.id)
+                tile => tile.flags.loadouts.owner == this.tokenOwner.id)
         
         var selectedTile = null
         for(const loadoutsTile of validTiles){
@@ -267,14 +273,14 @@ class LoadoutsToken extends LoadoutsObject {
         }
     
         if(! selectedTile){
-            ui.notifications.warn("Loadouts: " + triggeringUser.name + " placed a Loadouts token outside of a Loadouts tile.")
+            ui.notifications.warn("Loadouts: " + this.triggeringUser.name + " placed a Loadouts token outside of a Loadouts tile.")
             return;
         }
     };
 
     findTilePositions(){
         for(const loadoutsTile of this.validTiles){    
-            tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height)
+            let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
             if(! tilePositions.length){
                 if(this.objectDocument.flags.loadouts.width != this.objectDocument.flags.loadouts.height){
                     tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.height, this.objectDocument.flags.loadouts.width)
@@ -284,11 +290,11 @@ class LoadoutsToken extends LoadoutsObject {
                 }
             }
             if(tilePositions.length){
-                selectedTile = loadoutsTile;
+                this.selectedTile = loadoutsTile;
+                this.selectedPosition = tilePositions[0]
                 break;
-            }
-        }
-        return [selectedTile, tilePositions[0]]
+            };
+        };
     };
 
     filterTilePositions(loadoutsTile, itemSizeL, itemSizeH){
@@ -370,25 +376,25 @@ class LoadoutsToken extends LoadoutsObject {
 
     async createNewToken(){
         this.validTiles = super.findValidTiles();
-        const [selectedTile, validPosition] = this.findTilePositions();
-        if(! validPosition){
+        this.findTilePositions();
+        if(! this.selectedPosition){
             if(await notifyNoValidPositions(this.objectDocument)){
-                this.defineNewToken(selectedTile, validPosition);
+                this.defineNewToken();
                 this.placeToken();
             };
-        } else if(selectedTile.flags.loadouts.state == "remote"){
+        } else if(this.selectedTile.flags.loadouts.state == "remote"){
             if(await notifyNoCarriedPositions(this.objectDocument)){
-                this.defineNewToken(selectedTile, validPosition);
+                this.defineNewToken();
                 this.placeToken();
             };
         } else {
-            this.defineNewToken(selectedTile, validPosition);
+            this.defineNewToken();
             this.placeToken();
         };
     };
 
     removeLoadoutsToken(){
         this.objectDocument.delete();
-        ui.notifications.info(`Loadouts: removed '${objectDocument.name}' from ${objectDocument.parent.name}'s loadout in '${loadoutsItemToken.parent.name}'`);
+        ui.notifications.info(`Loadouts: removed '${this.objectDocument.name}' from ${this.tokenOwner.name}'s loadout in '${this.objectDocument.parent.name}'`);
     };
 };

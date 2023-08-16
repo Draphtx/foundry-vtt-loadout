@@ -1,8 +1,8 @@
 import { LoadoutsItem, LoadoutsToken } from './loadouts.js';
 
 Hooks.on("createItem", function(document, _, userId){
-    const loadoutsItem = new loadoutsItem(document);
-    loadoutsToken.processNewItem();
+    const loadoutsItem = new LoadoutsItem(document, _, userId);
+    loadoutsItem.processNewItem();
     Hooks.off("createItem");
 });
 
@@ -12,8 +12,8 @@ Hooks.on("deleteItem", function(document){
     Hooks.off("deleteItem");
 });
 
-Hooks.on("updateToken", function(tokenDocument, updateData, options, userId){
-    const loadoutsToken = new LoadoutsToken(tokenDocument);
+Hooks.on("updateToken", function(tokenDocument, updateData, diffData, userId){
+    const loadoutsToken = new LoadoutsToken(tokenDocument, updateData, diffData, userId);
     loadoutsToken.processUpdatedToken();
     Hooks.off("updateToken");
 });
