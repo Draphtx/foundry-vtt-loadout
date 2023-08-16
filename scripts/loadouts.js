@@ -40,7 +40,7 @@ class LoadoutsObject {
     };
 };
 
-class LoadoutsItem extends LoadoutsObject {
+export class LoadoutsItem extends LoadoutsObject {
     constructor(objectDocument, _, userId) {
         super(objectDocument)
         this.itemRotation = 0;
@@ -226,7 +226,7 @@ class LoadoutsItem extends LoadoutsObject {
     };
 };
 
-class LoadoutsToken extends LoadoutsObject {
+export class LoadoutsToken extends LoadoutsObject {
     constructor(objectDocument, updateData, diffData, userId) {
         super(objectDocument);
         this.diffData = diffData;
