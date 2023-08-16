@@ -1,6 +1,6 @@
 # foundry-vtt-loadouts
 
-### 2.3.9a
+### 2.4.1a
 - Lots of refactoring to support future extensibility & maintainability
 
 ### 2.3.6a

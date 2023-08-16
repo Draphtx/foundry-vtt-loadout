@@ -10,7 +10,7 @@
       "url": "https://www.buymeacoffee.com/draphtx"
     }
   ],
-  "version": "2.3.9",
+  "version": "2.4.1",
   "minimumCoreVersion" : "10.291",
   "compatibleCoreVersion" : 10,
   "compatibility": {
@@ -18,8 +18,10 @@
       "verified": "10"
   },
   "scripts": [
+    "scripts/config.js"
+  ],
+  "esmodules": [
     "scripts/init.js",
-    "scripts/config.js",
     "scripts/loadouts.js",
     "scripts/hooks.js",
     "scripts/loadoutsDialogs.js"
