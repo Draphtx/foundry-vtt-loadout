@@ -1,5 +1,8 @@
 # foundry-vtt-loadouts
 
+### 2.3.9a
+- Lots of refactoring to support future extensibility & maintainability
+
 ### 2.3.6a
 - Trying to figure out why configs aren't getting registered - maybe the other functionality (i.e. retrieving the system's types) isn't available at init time
 

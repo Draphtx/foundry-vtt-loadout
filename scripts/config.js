@@ -69,6 +69,23 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: Boolean
     });
 
+    game.settings.register("loadouts", "loadouts-show-stack-bar", {
+        name: "Show Stack Bar",
+        hint: "For tokens in stacks, display stack quantity using the health bar",
+        scope: "world",
+        config: true,
+        default: 50,
+        choices: {
+            0: "Never Displayed", 
+            10: "When Controlled", 
+            20: "Hovered By Owner", 
+            30: "Hovered By Anyone", 
+            40: "Always For Owner", 
+            50: "Always For Everyone"
+        },
+        type: Number
+    });
+
     // Stacked item overlay icon
     game.settings.register("loadouts", "loadouts-stack-overlay", {
         name: "Stacks Overlay Icon",
