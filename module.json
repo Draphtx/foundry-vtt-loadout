@@ -22,7 +22,7 @@
     "scripts/config.js",
     "scripts/loadouts.js",
     "scripts/hooks.js",
-    "scripts/loadoutDialogs.js"
+    "scripts/loadoutsDialogs.js"
   ],
   "languages": [
     {
