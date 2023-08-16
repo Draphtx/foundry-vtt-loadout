@@ -14,8 +14,8 @@
   "minimumCoreVersion" : "10.291",
   "compatibleCoreVersion" : 10,
   "compatibility": {
-      "minimum": 10,
-      "verified": "10.291"
+      "minimum": "10",
+      "verified": "10"
   },
   "scripts": [
     "scripts/init.js",
