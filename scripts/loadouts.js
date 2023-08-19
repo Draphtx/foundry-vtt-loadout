@@ -368,8 +368,7 @@ export class LoadoutsToken extends LoadoutsObject {
             height: this.itemRotation ? this.objectDocument.flags.loadouts.width : this.objectDocument.flags.loadouts.height,
             x: this.selectedPosition.x1,
             y: this.selectedPosition.y1,
-            rotation: this.itemRotation,
-            lockRotation: true
+            rotation: this.itemRotation
         }
     };
 
