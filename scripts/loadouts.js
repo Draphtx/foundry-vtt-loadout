@@ -132,7 +132,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
     };
 
-    processNewItem(){
+    processNewItem() {
         // Perform checks to ensure that the item is one we will try to handle using the loadout system
         if(! this.verifyItemSuitability()){
             console.debug("▞▖Loadouts: item " + this.objectDocument.name + " discarded by suitability checks")
@@ -159,6 +159,17 @@ export class LoadoutsItem extends LoadoutsObject {
         }
         const loadoutsToken = createTokenForSystem(game.system.id, this.objectDocument);
         loadoutsToken.createNewToken();
+    };
+
+    processUpdatedItem() {
+        // For the time-being there is no special functionality for the core module to do here,
+        // but we should go ahead and expose this method for use by submodules.
+
+        // When items are updated in the backend, we don't need to worry about them
+        if((itemDocument.parent == null) || (itemDocument.parent == undefined)){ return; }
+    
+        // Don't bother with items that have not been linked to a loadout token
+        if(itemDocument?.flags?.loadouts?.configured !== true){ return; }
     };
 
     locateRemovedItem() {
