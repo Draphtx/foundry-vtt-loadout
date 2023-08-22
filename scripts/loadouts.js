@@ -47,7 +47,7 @@ export class LoadoutsItem extends LoadoutsObject {
         this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 1;
     };
 
-    verifyItemSuitability() {
+    _verifyItemSuitability() {
         const managedActorTypes = game.settings.get("loadouts", "loadouts-managed-actor-types");
         const managedItemTypes = game.settings.get("loadouts", "loadouts-managed-item-types");
         const allowUnconfiguredItems = game.settings.get('loadouts', 'loadouts-allow-unconfigured-items');
@@ -134,7 +134,7 @@ export class LoadoutsItem extends LoadoutsObject {
 
     processNewItem() {
         // Perform checks to ensure that the item is one we will try to handle using the loadout system
-        if(! this.verifyItemSuitability()){
+        if(! this._verifyItemSuitability()) {
             console.debug("▞▖Loadouts: item " + this.objectDocument.name + " discarded by suitability checks")
             return;
         }
@@ -158,7 +158,7 @@ export class LoadoutsItem extends LoadoutsObject {
             return new TokenClass(...args);
         }
         const loadoutsToken = createTokenForSystem(game.system.id, this.objectDocument);
-        loadoutsToken.createNewToken();
+        loadoutsToken._createNewToken();
     };
 
     processUpdatedItem() {
@@ -172,7 +172,7 @@ export class LoadoutsItem extends LoadoutsObject {
         if(itemDocument?.flags?.loadouts?.configured !== true){ return; }
     };
 
-    locateRemovedItem() {
+    _locateRemovedItem() {
         const getLoadoutsScenes = () => {
             return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
         };
@@ -231,8 +231,8 @@ export class LoadoutsItem extends LoadoutsObject {
     processRemovedItem(){
         if (!this.objectDocument.flags.loadouts){ return; };
     
-        this.locateRemovedItem()
-        if(!this.removedItemToken){
+        this._locateRemovedItem()
+        if(! this.removedItemToken){
             console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
             return;
         } else {
@@ -293,7 +293,7 @@ export class LoadoutsToken extends LoadoutsObject {
         }
     };
 
-    findTilePositions(){
+    _findTilePositions(){
         for(const loadoutsTile of this.validTiles){    
             let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
             if(! tilePositions.length){
@@ -312,7 +312,7 @@ export class LoadoutsToken extends LoadoutsObject {
         };
     };
 
-    filterTilePositions(loadoutsTile, itemSizeL, itemSizeH){
+    _filterTilePositions(loadoutsTile, itemSizeL, itemSizeH){
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
@@ -383,27 +383,27 @@ export class LoadoutsToken extends LoadoutsObject {
         }
     };
 
-    async placeToken() {
+    async _placeToken() {
         let itemTokenDocument = await this.objectDocument.parent.getTokenDocument(this.itemTokenSettings);
         const addedToken = await this.selectedTile.parent.createEmbeddedDocuments("Token", [itemTokenDocument]);
     };
 
-    async createNewToken(){
+    async _createNewToken(){
         this.validTiles = super.findValidTiles();
         this.findTilePositions();
         if(! this.selectedPosition){
             if(await notifyNoValidPositions(this.objectDocument)){
                 this.defineNewToken();
-                this.placeToken();
+                this._placeToken();
             };
         } else if(this.selectedTile.flags.loadouts.state == "remote"){
             if(await notifyNoCarriedPositions(this.objectDocument)){
                 this.defineNewToken();
-                this.placeToken();
+                this._placeToken();
             };
         } else {
             this.defineNewToken();
-            this.placeToken();
+            this._placeToken();
         };
     };
 
