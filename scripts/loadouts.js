@@ -107,7 +107,7 @@ export class LoadoutsItem extends LoadoutsObject {
         membershipIds.push(this.objectDocument.id); 
     
         const updateData = {
-            name: `${loadoutsStack.name} (x${membershipIds.length})`,
+            name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
             displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
             actorData: {
                 system: {
@@ -203,7 +203,7 @@ export class LoadoutsItem extends LoadoutsObject {
 
         if (membersArray.length > 0) {
             this.removedItemToken.update({
-                name: `${this.objectDocument.name} (x${membersArray.length})`,
+                name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
                 displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
                 actorData: {
                     system: {
@@ -361,7 +361,7 @@ export class LoadoutsToken extends LoadoutsObject {
         return itemPositions;
     };
 
-    defineNewToken(selectedTile, validPosition) {
+    defineNewToken() {
         this.itemTokenSettings = {
             name: this.objectDocument.name,
             actorLink: false,
