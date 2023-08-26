@@ -5,44 +5,92 @@ class LoadoutsObject {
         this.objectDocument = objectDocument;
     };
 
-    findValidTiles(){
-        const loadoutsScenes = game.scenes.filter(
-            scene => scene.flags.loadouts).filter(
-                scene => scene.flags.loadouts.isLoadoutsScene == true)
-        
-        if((loadoutsScenes == null) || (loadoutsScenes == undefined)){
-            console.warn("▞▖Loadouts: unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.")
-            return;
-        }
-        
-        let validTiles = []
-        for(let loadoutsScene of loadoutsScenes){
-            let loadoutsTiles = loadoutsScene.tiles.filter(
-                tile => tile.flags.loadouts).filter(
-                    tile => tile.flags.loadouts.owner == this.objectDocument.parent.id).filter(
-                        tile => {
-                            const allowedTypes = tile.flags.loadouts?.allowed_types;
-                        
-                            // If allowedTypes is set but doesn't include objectDocument.system.type, we reject the tile.
-                            if (allowedTypes && !allowedTypes.split(',').includes(this.objectDocument.type)) {
-                                return false;
-                            }
-                        
-                            // If allowedTypes is null or undefined, or if it includes objectDocument.system.type, we continue with the size check.
-                            return Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
-                        }
-                    )
-            validTiles = [...validTiles, ...loadoutsTiles]
-        }
-    
+    returnLoadoutsScenes() {
+        /** 
+         * @returns {Array} array of Loadouts-enabled scenes
+         */
+        return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
+    };
+};
+
+export class LoadoutsTile extends LoadoutsObject {
+    constructor(objectDocument) {
+        super(objectDocument)
+    };
+
+    _findOwnedTiles(scene) {
+        /** 
+         * @param {Object} scene - A Foundry sceneDocument
+         * @returns {Array} returns an array of tileDocuments owned by the object parent
+         */
+        return scene.tiles.filter(tile.flags?.loadouts?.owner == this.objectDocument.parent.id);
+    };  
+
+    _passTileFilters(tile) {
+        /** 
+         * @param {Object} tile - A Foundry tileDocument
+         * @returns {Bool} boolean whether the current object is accepted by the tile
+         */
+        const allowedTypes = tile.flags?.loadouts?.allowed_types
+        if (allowedTypes && !allowedTypes.split(',').includes(this.objectDocument.type)) {
+            return false;
+        } else { 
+            return true; 
+        };
+    };
+
+    _passTileSize(tile) {
+        /** 
+         * @returns {Bool} ensures that the object's visual representation would fit inside the tile
+         */
+        return Math.max(tile.height/tile.parent.grid.size, tile.width/tile.parent.grid.size) >= Math.max(this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
+    };
+
+    findValidTiles() {     
+        /** 
+         * @returns {Array} returns a weight-sorted array of applicable tileDocuments
+         */   
+        let validTiles = [];
+        for(let loadoutsScene of this.returnLoadoutsScenes()) {
+            const actorOwnedTiles = this._findOwnedTiles(loadoutsScene);
+            const filteredTiles = actorOwnedTiles.filter(loadoutsTile => 
+                _passTileFilters(loadoutsTile) && this._passTileSize(loadoutsTile)
+            );
+            validTiles = [...validTiles, ...filteredTiles];
+        };
         // Return the valid tiles, sorted by preference weight
         return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
+    };
+
+    findValidStack(validTiles) {
+        function isInLoadoutsTileArea(token, tile) {
+            return token.x >= tile.x && token.x <= (tile.x + tile.width) &&
+                    token.y >= tile.y && token.y <= (tile.y + tile.height);
+        };
+    
+        const isValidStack = (token) => {
+            return token.name == this.objectDocument.name && 
+                   (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
+        };
+        
+        for (const loadoutsTile of this.validTiles) {
+            let validStacks = loadoutsTile.parent.tokens.filter(
+                t => isInLoadoutsTileArea(t, loadoutsTile) && isValidStack(t)
+            );
+            
+            if (validStacks.length) {
+                return [loadoutsTile, validStacks[0]];
+            };
+        };
+        return [false, false]
     };
 };
 
 export class LoadoutsItem extends LoadoutsObject {
     constructor(objectDocument, _, userId) {
-        super(objectDocument)
+        super(objectDocument);
+        this.tileManager = new LoadoutsTile(objectDocument);
+        this.tokenManager = new LoadoutsToken(objectDocument);
         this.itemRotation = 0;
         this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 1;
     };
@@ -77,29 +125,6 @@ export class LoadoutsItem extends LoadoutsObject {
             to add ${this.objectDocument.type} items that are not configured for Loadouts.`);
         this.objectDocument.delete();
         return false;
-    };
-
-    findValidStack() {
-        function isInLoadoutsTileArea(token, tile) {
-            return token.x >= tile.x && token.x <= (tile.x + tile.width) &&
-                    token.y >= tile.y && token.y <= (tile.y + tile.height);
-        };
-    
-        const isValidStack = (token) => {
-            return token.name == this.objectDocument.name && 
-                   (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
-        };
-        
-        for (const loadoutsTile of this.validTiles) {
-            let validStacks = loadoutsTile.parent.tokens.filter(
-                t => isInLoadoutsTileArea(t, loadoutsTile) && isValidStack(t)
-            );
-            
-            if (validStacks.length) {
-                return [loadoutsTile, validStacks[0]];
-            };
-        };
-        return [false, false]
     };
 
     updateStack(loadoutsTile, loadoutsStack){
@@ -140,11 +165,11 @@ export class LoadoutsItem extends LoadoutsObject {
         }
 
         // Get tiles that could _potentially_ hold the payload based on geometry and ownership
-        this.validTiles = super.findValidTiles()
+        this.validTiles = this.tileManager.findValidTiles(this.objectDocument)
 
         // Add stacked items to existing stacks, if possible
         if(this.isStack){
-            const [loadoutsTile, loadoutsStack] = this.findValidStack();
+            const [loadoutsTile, loadoutsStack] = this.tileManager.findValidStack(this.validTiles);
             if(loadoutsTile){
                 if(this.updateStack(loadoutsTile, loadoutsStack)){
                     return;
@@ -172,33 +197,8 @@ export class LoadoutsItem extends LoadoutsObject {
         if(itemDocument?.flags?.loadouts?.configured !== true){ return; }
     };
 
-    _locateRemovedItem() {
-        const getLoadoutsScenes = () => {
-            return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
-        };
-        
-        const findItemTokenInScene = (scene) => {
-            return scene.tokens.contents.find(token => 
-                token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
-            );
-        };
-        
-        const findItemTokenAcrossScenes = (scenes) => {
-            let loadoutsItemToken = null; // Initialized to null instead of false for clarity
-            for (const loadoutsScene of scenes) {
-                loadoutsItemToken = findItemTokenInScene(loadoutsScene);
-                if (loadoutsItemToken) break;
-            };
-            return loadoutsItemToken;
-        };
-        
-        const loadoutsScenes = getLoadoutsScenes();
-        this.removedItemToken = findItemTokenAcrossScenes(loadoutsScenes);
-    };
-    
-
     removeLoadoutsItem(){
-        const membersArray = this.removedItemToken.flags.loadouts.stack.members;
+        const membersArray = this.loadoutsToken.flags.loadouts.stack.members;
         const index = membersArray.indexOf(this.objectDocument.id);
         
         if (index > -1) {
@@ -206,7 +206,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
 
         if (membersArray.length > 0) {
-            this.removedItemToken.update({
+            this.loadoutsToken.update({
                 flags: {
                     loadouts: {
                         stack: {
@@ -215,24 +215,44 @@ export class LoadoutsItem extends LoadoutsObject {
                     },
                 name: `${this.objectDocument.name} (x${membersArray.length})`,
                 });
-            ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
+            ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.loadoutsToken.parent.name}'`);
             if(membersArray.length == 1){
-                this.removedItemToken.update({
+                this.loadoutsToken.update({
                     overlayEffect: "",
                     name: this.objectDocument.name,
                 })
             };
         } else {
-            const loadoutsToken = new LoadoutsToken(this.removedItemToken);
+            const loadoutsToken = new LoadoutsToken(this.loadoutsToken);
             loadoutsToken.removeLoadoutsToken();
         };
+    };
+
+    _locateLoadoutsToken() {
+        const findTokenInScene = (scene) => {
+            return scene.tokens.contents.find(token => 
+                token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
+            );
+        };
+        
+        const findTokenAcrossScenes = (scenes) => {
+            let loadoutsItemToken = null;
+            for (const loadoutsScene of scenes) {
+                loadoutsItemToken = findItemTokenInScene(loadoutsScene);
+                if (loadoutsItemToken) break;
+            };
+            return loadoutsItemToken;
+        };
+        
+        const loadoutsScenes = this.returnLoadoutsScenes();
+        this.loadoutsToken = findItemTokenAcrossScenes(loadoutsScenes);
     };
 
     processRemovedItem(){
         if (!this.objectDocument.flags.loadouts){ return; };
     
-        this._locateRemovedItem()
-        if(! this.removedItemToken){
+        this._locateLoadoutsToken()
+        if(! this.loadoutsToken){
             console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
             return;
         } else {
@@ -244,6 +264,7 @@ export class LoadoutsItem extends LoadoutsObject {
 export class LoadoutsToken extends LoadoutsObject {
     constructor(objectDocument, updateData, diffData, userId) {
         super(objectDocument);
+        this.tileManager = new LoadoutsTile(objectDocument);
         this.diffData = diffData;
         this.updateData = updateData;
         this.userId = userId;
