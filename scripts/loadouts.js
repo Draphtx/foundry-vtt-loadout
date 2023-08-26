@@ -108,6 +108,17 @@ export class LoadoutsItem extends LoadoutsObject {
     
         const updateData = {
             name: `${loadoutsStack.name} (x${membershipIds.length})`,
+            displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+            actorData: {
+                system: {
+                    derivedStats: {
+                        hp: {
+                            max: this.objectDocument.flags.loadouts.stack.max,
+                            value: membershipIds.length,
+                        }
+                    }
+                }
+            },
             flags: {
                 loadouts: {
                     stack: {
@@ -192,17 +203,29 @@ export class LoadoutsItem extends LoadoutsObject {
 
         if (membersArray.length > 0) {
             this.removedItemToken.update({
+                name: `${this.objectDocument.name} (x${membersArray.length})`,
+                displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+                actorData: {
+                    system: {
+                        derivedStats: {
+                            hp: {
+                                max: this.objectDocument.flags.loadouts.stack.max,
+                                value: membersArray.length,
+                            }
+                        }
+                    }
+                },
                 flags: {
                     loadouts: {
                         stack: {
                             members: membersArray}
                         }
                     },
-                name: `${this.objectDocument.name} (x${membersArray.length})`,
                 });
             ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
             if(membersArray.length == 1){
                 this.removedItemToken.update({
+                    displayBars: 0,
                     overlayEffect: "",
                     name: this.objectDocument.name,
                 })
