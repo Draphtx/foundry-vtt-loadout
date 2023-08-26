@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.4.3a
+- Fixed tile sorting bug that was causing improper weight comparisons
+- Fixed stacking bugs around token names
+- Dialogue promise fixes for addAnyway and addRemote conditions
+
 ### 2.4.1a
 - Lots of refactoring to support future extensibility & maintainability
 
