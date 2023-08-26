@@ -108,6 +108,7 @@ export class LoadoutsItem extends LoadoutsObject {
     
         const updateData = {
             name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
+            displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
             displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
             actorData: {
                 system: {
@@ -204,6 +205,7 @@ export class LoadoutsItem extends LoadoutsObject {
         if (membersArray.length > 0) {
             this.removedItemToken.update({
                 name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
+                displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
                 displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
                 actorData: {
                     system: {
@@ -244,7 +246,7 @@ export class LoadoutsItem extends LoadoutsObject {
             console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
             return;
         } else {
-            this.removeLoadoutsItem();
+            this.removeLoadoutsItem(this.objectDocument);
         };
     };
 };
@@ -256,15 +258,15 @@ export class LoadoutsToken extends LoadoutsObject {
         this.updateData = updateData;
         this.userId = userId;
         this.triggeringUser = game.users.find(user => user.id == this.userId);
-        this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
     };
 
     processUpdatedToken(){
         if((! this.objectDocument.parent.flags?.loadouts?.isLoadoutsScene) || 
             (! this.objectDocument.flags.hasOwnProperty('loadouts')) || 
             ((! this.updateData.x > 0) && (! this.updateData.y > 0))){ return; };
-    
+            
         // Find the actor who owns the item linked to the Loadouts token
+        this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
         if((this.tokenOwner == null) || (this.tokenOwner == undefined)){
             console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + this.triggeringUser.name)
             return;
@@ -418,6 +420,7 @@ export class LoadoutsToken extends LoadoutsObject {
     };
 
     removeLoadoutsToken(){
+        this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
         this.objectDocument.delete();
         ui.notifications.info(`Loadouts: removed '${this.objectDocument.name}' from ${this.tokenOwner.name}'s loadout in '${this.objectDocument.parent.name}'`);
     };

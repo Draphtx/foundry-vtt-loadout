@@ -26,9 +26,9 @@ _As this is in an alpha stage and many customization elements are still in devel
 
 # Configuration Options
 ## System-Wide
-`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. For Cyberpunk Red this would include options like weapons, ammo, and cyberware.
+`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. _This list will only include types of item that are represented in your local game - that is, items you have imported from system compendiums or created yourself and which show up under the GM's Items toolbar._
 
-`Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts.
+`Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts. _This list will only include types of actor that you have created an instance of. That is, an `npc` option will not be displayed unless you have created an NPC actor prior._
 
 `Allow Unconfigured Items` Some items that are part of a Loadouts-managed item type may not qualify as items that you wish Loadouts to represent visually. For instance, Cyberpunk Red players may have the 'Martial Arts' skill which is represented as a weapon item to allow attack rolls, but which would not take up carry space in a Loadout. By leaving the item unconfigured and setting this option to True, players can still add the item to their sheet. 
 
@@ -38,6 +38,12 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 
 `Enable Add When Full` If a player has no inventory slots available on their person, and Remote Stashing is not enabled or stashes are also full, the player will have the choice to add the item to their inventory without the accompanying Loadouts configuration and token. If disabled, the player will simply get a message that their inventory is full and the item may not be added.
 
+`Show Token Nameplates` Works just like in normal Foundry - show the item's name (and count if stacked) under the token.
+
+`Show Stack Bar` Uses the token's 'health' bar to display the number of items in stack.
+
+`Stack Overlay Icon` Allows you to set an image path for an overlay that is shown over the tokens of an item stack. Set to empty to disable.
+
 ## Item Options
 `Image Path` Determines which image is used to represent the item in a Loadouts inventory.
 
@@ -45,7 +51,8 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 
 `Token Height` Set the height of the item's token.
 
-`Stack Size` If more than one of the item should be able to fit in a slot, define how many can be stacked in that one inventory slot. E.g. a quiver that can fit 10 arrows.
+`Stack Size` If more than one of the item should be able to fit in a slot, define how many can be stacked in that one inventory slot. E.g. a quiver that can fit 10 arrows. This number must be at least 1.
+_(Note that the core Loadouts module does not support item quantities at this time. That is, if a single item already represents multiple items in the standard inventory (very common with consumables), it still counts as a single item in Loadouts. So if a bundle of arrows held 5x arrows and you wanted an entire quiver to hold 20 arrows, the stack size for the quiver would be 4 to support 4 bundles of 5 arrows. Loadouts add-on modules may implement system-specific support for item quantity at their discretion.)_
 
 `Loadouts Tag` A single alphanumeric tag of 25 characters or less which can be used by Loadouts tiles to filter incoming items. For example, maybe bullets and grenades are both of the type *ammunition* in the game system, but you want grenades to always go to a bandolier slot. By setting a Loadouts tag of 'grenade' we can use the tile configuration options to ensure that our bandolier accepts only grenades and our ammo pouches only ammunition.
 
