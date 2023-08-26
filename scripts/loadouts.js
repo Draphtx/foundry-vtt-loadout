@@ -383,7 +383,7 @@ export class LoadoutsToken extends LoadoutsObject {
                 this.placeToken();
             };
         } else if(this.selectedTile.flags.loadouts.state == "remote"){
-            if(await notifyNoCarriedPositions(this.objectDocument)){
+            if(await notifyNoCarriedPositions(this.objectDocument, this.selectedTile)){
                 this.defineNewToken();
                 this.placeToken();
             };
