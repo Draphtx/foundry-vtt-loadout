@@ -59,14 +59,21 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: Boolean
     });
 
-    // Display itemToken names on hover
-    game.settings.register("loadouts", "loadouts-token-names", {
+    game.settings.register("loadouts", "loadouts-show-nameplates", {
         name: "Show Token Nameplates",
-        hint: "Display the linked item's name as the token's nameplate",
+        hint: "Display the nameplate for Loadouts tokens",
         scope: "world",
         config: true,
-        default: true,
-        type: Boolean
+        default: 50,
+        choices: {
+            0: "Never Displayed", 
+            10: "When Controlled", 
+            20: "Hovered By Owner", 
+            30: "Hovered By Anyone", 
+            40: "Always For Owner", 
+            50: "Always For Everyone"
+        },
+        type: Number
     });
 
     game.settings.register("loadouts", "loadouts-show-stack-bar", {

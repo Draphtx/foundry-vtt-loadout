@@ -1,5 +1,10 @@
 # foundry-vtt-loadouts
 
+### 2.4.4a
+- Fixed a bug with tile deletion
+- Fixed nameplates settings
+- Fixed bug with updating non-Loadouts tokens
+
 ### 2.4.3a
 - Fixed tile sorting bug that was causing improper weight comparisons
 - Fixed stacking bugs around token names
