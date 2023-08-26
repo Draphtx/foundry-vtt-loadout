@@ -36,7 +36,7 @@ class LoadoutsObject {
         }
     
         // Return the valid tiles, sorted by preference weight
-        return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
+        return validTiles.sort((a, b) => a.flags.loadouts.weight - b.flags.loadouts.weight);
     };
 };
 
