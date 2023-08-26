@@ -86,7 +86,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
     
         const isValidStack = (token) => {
-            return token.name == this.objectDocument.name && 
+            return token.flags.loadouts.truename == this.objectDocument.name && 
                    (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
         };
         
@@ -371,6 +371,7 @@ export class LoadoutsToken extends LoadoutsObject {
                     "managed": true,
                     "linked": true,
                     "owner": this.objectDocument.parent.id,
+                    "truename": this.objectDocument.name,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
