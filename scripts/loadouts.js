@@ -36,7 +36,7 @@ class LoadoutsObject {
         }
     
         // Return the valid tiles, sorted by preference weight
-        return validTiles.sort((a, b) => a.flags.loadouts.weight < b.flags.loadouts.weight ? -1 : 1);
+        return validTiles.sort((a, b) => a.flags.loadouts.weight - b.flags.loadouts.weight);
     };
 };
 
@@ -86,7 +86,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
     
         const isValidStack = (token) => {
-            return token.name == this.objectDocument.name && 
+            return token.flags.loadouts.truename == this.objectDocument.name && 
                    (token.flags?.loadouts?.stack?.members?.length + 1) <= (this.objectDocument?.flags?.loadouts?.stack?.max);
         };
         
@@ -107,7 +107,18 @@ export class LoadoutsItem extends LoadoutsObject {
         membershipIds.push(this.objectDocument.id); 
     
         const updateData = {
-            name: `${loadoutsStack.name} (x${membershipIds.length})`,
+            name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
+            displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+            actorData: {
+                system: {
+                    derivedStats: {
+                        hp: {
+                            max: this.objectDocument.flags.loadouts.stack.max,
+                            value: membershipIds.length,
+                        }
+                    }
+                }
+            },
             flags: {
                 loadouts: {
                     stack: {
@@ -192,17 +203,29 @@ export class LoadoutsItem extends LoadoutsObject {
 
         if (membersArray.length > 0) {
             this.removedItemToken.update({
+                name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
+                displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+                actorData: {
+                    system: {
+                        derivedStats: {
+                            hp: {
+                                max: this.objectDocument.flags.loadouts.stack.max,
+                                value: membersArray.length,
+                            }
+                        }
+                    }
+                },
                 flags: {
                     loadouts: {
                         stack: {
                             members: membersArray}
                         }
                     },
-                name: `${this.objectDocument.name} (x${membersArray.length})`,
                 });
             ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
             if(membersArray.length == 1){
                 this.removedItemToken.update({
+                    displayBars: 0,
                     overlayEffect: "",
                     name: this.objectDocument.name,
                 })
@@ -338,7 +361,7 @@ export class LoadoutsToken extends LoadoutsObject {
         return itemPositions;
     };
 
-    defineNewToken(selectedTile, validPosition) {
+    defineNewToken() {
         this.itemTokenSettings = {
             name: this.objectDocument.name,
             actorLink: false,
@@ -348,6 +371,7 @@ export class LoadoutsToken extends LoadoutsObject {
                     "managed": true,
                     "linked": true,
                     "owner": this.objectDocument.parent.id,
+                    "truename": this.objectDocument.name,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
@@ -383,7 +407,7 @@ export class LoadoutsToken extends LoadoutsObject {
                 this.placeToken();
             };
         } else if(this.selectedTile.flags.loadouts.state == "remote"){
-            if(await notifyNoCarriedPositions(this.objectDocument)){
+            if(await notifyNoCarriedPositions(this.objectDocument, this.selectedTile)){
                 this.defineNewToken();
                 this.placeToken();
             };
