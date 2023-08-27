@@ -403,12 +403,15 @@ export class LoadoutsToken extends LoadoutsObject {
     async createNewToken(){
         this.validTiles = super.findValidTiles();
         this.findTilePositions();
+        this.tileOwner = game.actors.get(this.selectedTile.flags.loadouts.owner);
+        console.log(this.tileOwner)
         if(! this.selectedPosition){
             if(await notifyNoValidPositions(this.objectDocument)){
                 this.defineNewToken();
                 this.placeToken();
             };
-        } else if(this.selectedTile.flags.loadouts.state == "remote"){
+        // If none of the actor's owners (users) are viewing the scene with the local stash that the item is being sent to
+        } else if((this.selectedTile.flags.loadouts.state == "local") && (!game.users.some(user => user.viewedScene === this.selectedTile.parent.id && this.tileOwner.ownership[user.id] === 3))) {
             if(await notifyNoCarriedPositions(this.objectDocument, this.selectedTile)){
                 this.defineNewToken();
                 this.placeToken();
