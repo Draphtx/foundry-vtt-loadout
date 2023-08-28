@@ -312,7 +312,9 @@ export class LoadoutsToken extends LoadoutsObject {
     };
 
     findTilePositions(){
-        for(const loadoutsTile of this.validTiles){    
+        const localTiles = this.validTiles.filter(tile => tile.parent.id == this.getViewedScene());
+        const remoteTiles = this.validTiles.filter(tile => tile.parent.id != this.getViewedScene());
+        for (const loadoutsTile of [...localTiles, ...remoteTiles]) {
             let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
             if(! tilePositions.length){
                 if(this.objectDocument.flags.loadouts.width != this.objectDocument.flags.loadouts.height){
