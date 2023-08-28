@@ -5,13 +5,21 @@ class LoadoutsObject {
         this.objectDocument = objectDocument;
     };
 
+    getViewedScene() {
+        return game.user.viewedScene;
+    };
+
+    getActiveScene() {
+        return game.scenes.active.id;
+    };
+
     findValidTiles(){
         const loadoutsScenes = game.scenes.filter(
             scene => scene.flags.loadouts).filter(
                 scene => scene.flags.loadouts.isLoadoutsScene == true)
         
         if((loadoutsScenes == null) || (loadoutsScenes == undefined)){
-            console.warn("▞▖Loadouts: unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.")
+            console.warn("Loadouts | unable to find any scenes flagged for Loadouts. Please be sure to complete scene and tile setup as described in the documentation.")
             return;
         }
         
@@ -54,12 +62,12 @@ export class LoadoutsItem extends LoadoutsObject {
         
         // Do not try to handle item management for unwanted actor types
         if (!managedActorTypes.includes(this.objectDocument.parent.type)) {
-            console.debug(`▞▖Loadouts: actor type '${this.objectDocument.parent.type}' not managed`);
+            console.debug(`Loadouts | actor type '${this.objectDocument.parent.type}' not managed`);
             return false;
         }
     
         if (!managedItemTypes.includes(this.objectDocument.type)) {
-            console.debug(`▞▖Loadouts: item type '${this.objectDocument.type}' not managed`);
+            console.debug(`Loadouts | item type '${this.objectDocument.type}' not managed`);
             return false;
         }
     
@@ -69,7 +77,7 @@ export class LoadoutsItem extends LoadoutsObject {
         }
     
         if (allowUnconfiguredItems) {
-            console.debug(`▞▖Loadouts: ${this.objectDocument.name} of type '${this.objectDocument.type}' not flagged but unconfigured items setting is set to permissive.`);
+            console.debug(`Loadouts | ${this.objectDocument.name} of type '${this.objectDocument.type}' not flagged but unconfigured items setting is set to permissive.`);
             return false;
         }
     
@@ -99,7 +107,7 @@ export class LoadoutsItem extends LoadoutsObject {
                 return [loadoutsTile, validStacks[0]];
             };
         };
-        return [false, false]
+        return [false, false];
     };
 
     updateStack(loadoutsTile, loadoutsStack){
@@ -147,7 +155,7 @@ export class LoadoutsItem extends LoadoutsObject {
     processNewItem(){
         // Perform checks to ensure that the item is one we will try to handle using the loadout system
         if(! this.verifyItemSuitability()){
-            console.debug("▞▖Loadouts: item " + this.objectDocument.name + " discarded by suitability checks")
+            console.debug("Loadouts | item " + this.objectDocument.name + " discarded by suitability checks")
             return;
         }
 
@@ -243,7 +251,7 @@ export class LoadoutsItem extends LoadoutsObject {
     
         this.locateRemovedItem()
         if(!this.removedItemToken){
-            console.warn(`▞▖Loadouts: unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
+            console.warn(`Loadouts | unable to find Loadouts token related to ${this.objectDocument.id} on any Loadouts scene`);
             return;
         } else {
             this.removeLoadoutsItem(this.objectDocument);
@@ -268,7 +276,7 @@ export class LoadoutsToken extends LoadoutsObject {
         // Find the actor who owns the item linked to the Loadouts token
         this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
         if((this.tokenOwner == null) || (this.tokenOwner == undefined)){
-            console.warn("▞▖Loadouts: unable to find an item owner associated with a token recently updated by " + this.triggeringUser.name)
+            console.warn("Loadouts | unable to find an item owner associated with a token recently updated by " + this.triggeringUser.name)
             return;
         }
         if((this.tokenOwner.id != this.triggeringUser.id) && (this.triggeringUser.role != 4)){
@@ -279,7 +287,7 @@ export class LoadoutsToken extends LoadoutsObject {
 
         const linkedItems = this.objectDocument.flags.loadouts.stack.members
         if(!linkedItems.length > 0){
-            console.warn("▞▖Loadouts: unable to find item(s) associated with a token recently updated by " + this.triggeringUser.name)
+            console.warn("Loadouts | unable to find item(s) associated with a token recently updated by " + this.triggeringUser.name)
             return;
         }
         
@@ -410,8 +418,7 @@ export class LoadoutsToken extends LoadoutsObject {
                 this.defineNewToken();
                 this.placeToken();
             };
-        // If none of the actor's owners (users) are viewing the scene with the local stash that the item is being sent to
-        } else if((this.selectedTile.flags.loadouts.state == "local") && (!game.users.some(user => user.viewedScene === this.selectedTile.parent.id && this.tileOwner.ownership[user.id] === 3))) {
+        } else if((this.selectedTile.flags.loadouts.state == "local") && (this.selectedTile.parent.id != this.getViewedScene())) {
             if(await notifyNoCarriedPositions(this.objectDocument, this.selectedTile)){
                 this.defineNewToken();
                 this.placeToken();
