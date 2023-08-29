@@ -42,7 +42,7 @@ const loadoutsTileDialog = new Dialog({
     <label for="stateSelect">Carried State</label>
       <select name="stateSelect">
         <option value="carried">carried</option>
-        <option value="remote">remote</option>
+        <option value="local">local</option>
       </select>
     </div>
 
