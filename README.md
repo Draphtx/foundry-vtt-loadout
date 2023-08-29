@@ -72,7 +72,7 @@ Currently in Cyberpunk Red with the sample Loadouts scene, I use the following s
  - `4` for any carried luggage
  - `5` (least-preferred) for their remote stash or other uncarried inventories
 
-_Note that weight distribution is impacted by the `Prefer Local Tiles` option in [System Settings](#system-options)_
+_Note that weight distribution is impacted by the `Prefer Local Tiles` option in [System Options](#system-options)_
 
 `Storage Name` Allows you to designate names for tiles that may be used for in-game Loadouts notifications. E.g. 'Ni-Con added an Assault Rifle to his back/shoulder.'
 
