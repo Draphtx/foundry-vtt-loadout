@@ -313,9 +313,14 @@ export class LoadoutsToken extends LoadoutsObject {
 
     findTilePositions() {
         // Prefer tiles in the scene that the user is currently viewing
-        const localTiles = this.validTiles.filter(tile => tile.parent.id == this.getViewedScene());
-        const remoteTiles = this.validTiles.filter(tile => tile.parent.id != this.getViewedScene());
-        for (const loadoutsTile of [...localTiles, ...remoteTiles]) {
+        if(game.settings.get("loadouts", "loadouts-prefer-local-tiles")){
+            const localTiles = this.validTiles.filter(tile => tile.parent.id == this.getViewedScene());
+            const remoteTiles = this.validTiles.filter(tile => tile.parent.id != this.getViewedScene());
+            let orderedTiles = [...localTiles, ...remoteTiles];
+        } else {
+            let orderedTiles = this.validTiles;
+        };
+        for (const loadoutsTile of orderedTiles) {
             let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
             if(! tilePositions.length) {
                 if(this.objectDocument.flags.loadouts.width != this.objectDocument.flags.loadouts.height) {

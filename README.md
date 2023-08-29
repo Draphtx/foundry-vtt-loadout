@@ -60,7 +60,9 @@ _(Note that the core Loadouts module does not support item quantities at this ti
 
 `Character Name` Set the ownership of this tile to a specific player character. (Shared stashes will be implemented later)
 
-`Weight` An arbitrary value between 0-99 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack.
+`Weight` An arbitrary value between 0-99 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack. 
+
+`Prefer Local Tiles` When activated, slots in the currently viewed scene are weighted more strongly overall than those in other scenes.
 
 Currently in Cyberpunk Red with the sample Loadouts scene, I use the following settings:
  - `0` (most-preferred) for their hidden, small holsters at the ankle and under the arm

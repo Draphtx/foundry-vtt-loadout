@@ -103,4 +103,14 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: String
     });
 
+    // Stacked item overlay icon
+    game.settings.register("loadouts", "loadouts-prefer-local-tiles", {
+        name: "Prefer Local Tiles",
+        hint: "When adding items, prefer tiles on the currently-viewed scene",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
+
 });
