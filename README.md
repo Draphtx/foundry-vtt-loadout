@@ -25,7 +25,7 @@ _As this is in an alpha stage and many customization elements are still in devel
 6. Consult the configuration options in the main Foundry `Configure Settings` window.
 
 # Configuration Options
-## System-Wide
+## <a name="system-options"></a>System-Wide
 `Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. _This list will only include types of item that are represented in your local game - that is, items you have imported from system compendiums or created yourself and which show up under the GM's Items toolbar._
 
 `Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts. _This list will only include types of actor that you have created an instance of. That is, an `npc` option will not be displayed unless you have created an NPC actor prior._
@@ -44,6 +44,8 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 
 `Stack Overlay Icon` Allows you to set an image path for an overlay that is shown over the tokens of an item stack. Set to empty to disable.
 
+`Prefer Local Tiles` When activated, slots in the currently viewed scene are weighted more strongly overall than those in other scenes. See [Tile Options](#tile_options) for more information on preference weight.
+
 ## Item Options
 `Image Path` Determines which image is used to represent the item in a Loadouts inventory.
 
@@ -56,13 +58,11 @@ _(Note that the core Loadouts module does not support item quantities at this ti
 
 `Loadouts Tag` A single alphanumeric tag of 25 characters or less which can be used by Loadouts tiles to filter incoming items. For example, maybe bullets and grenades are both of the type *ammunition* in the game system, but you want grenades to always go to a bandolier slot. By setting a Loadouts tag of 'grenade' we can use the tile configuration options to ensure that our bandolier accepts only grenades and our ammo pouches only ammunition.
 
-## Tile Options
+## <a name="tile-options"></a>Tile Options
 
 `Character Name` Set the ownership of this tile to a specific player character. (Shared stashes will be implemented later)
 
-`Weight` An arbitrary value between 0-99 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack. 
-
-`Prefer Local Tiles` When activated, slots in the currently viewed scene are weighted more strongly overall than those in other scenes.
+`Weight` An arbitrary value between 0-99 that establishes a preference order for the tiles when a new token is being dropped by Loadouts. Preference is in descending order: i.e. you might choose to set a character's 'holster' slot to 0 so that, if a newly-acquired weapon fits in a holster, it is more likely to be placed there than in, say, their backpack.
 
 Currently in Cyberpunk Red with the sample Loadouts scene, I use the following settings:
  - `0` (most-preferred) for their hidden, small holsters at the ankle and under the arm
@@ -71,6 +71,8 @@ Currently in Cyberpunk Red with the sample Loadouts scene, I use the following s
  - `3` for their back/shoulder
  - `4` for any carried luggage
  - `5` (least-preferred) for their remote stash or other uncarried inventories
+
+_Note that weight distribution is impacted by the `Prefer Local Tiles` option in [System Settings](#system-options)_
 
 `Storage Name` Allows you to designate names for tiles that may be used for in-game Loadouts notifications. E.g. 'Ni-Con added an Assault Rifle to his back/shoulder.'
 
