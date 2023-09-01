@@ -106,6 +106,7 @@ new Dialog({
                 html.find('[name="imagePath"]').val(),
                 html.find('[name="tokenWidth"]').val(),
                 html.find('[name="tokenHeight"]').val(),
+                html.find('[name="tokenScale"]',).val(),
                 html.find('[name="stackSize"]').val(),
                 html.find('[name="loadoutsTag"]').val() || null
             )
@@ -113,7 +114,7 @@ new Dialog({
     }
 }).render(true);
 
-async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag){
+async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag) {
     // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
     await game.items.get(itemId).update({
@@ -123,22 +124,23 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
                 img: imagePath,
                 width: parseInt(tokenWidth),
                 height: parseInt(tokenHeight),
+                scale: tokenScale,
                 stack: {max: parseInt(stackSize)},
                 loadoutsTag: loadoutsTag
             }
         }
     })
-}
+};
 
-async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag){
+async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag) {
     console.log("Configuring items")
     itemIds = itemIds.filter(x => x !== undefined);
     for(const itemId of itemIds){
-        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, stackSize, loadoutsTag)
+        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag)
     }
     
     ui.notifications.info("Loadouts: configured " + itemIds.length + " items for management")
     await new Promise(r => setTimeout(r, 500));
     game.macros.getName("configureLoadoutsItems").execute()
 
-}
+};

@@ -49,9 +49,11 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 ## Item Options
 `Image Path` Determines which image is used to represent the item in a Loadouts inventory.
 
-`Token Width` Set the width of the item's token. This and the following option should be set as **grid units**, not pixels.
+`Token Width` Set the width of the item's token in **grid units**, not pixels.
 
-`Token Height` Set the height of the item's token.
+`Token Height` Set the height of the item's token in **grid units**, not pixels.
+
+`Token Scale` Set the token image's scale. This is to allow for situations where the token's image would cover a graphical grid image at full size (e.g. if your grid has borders) or comes too close to the grid line for asthetic comfort. _Note that this changes the scale of the image within the token's bounds, NOT how many grid units the token represents, which is still a function of Token Width / Height._
 
 `Stack Size` If more than one of the item should be able to fit in a slot, define how many can be stacked in that one inventory slot. E.g. a quiver that can fit 10 arrows. This number must be at least 1.
 _(Note that the core Loadouts module does not support item quantities at this time. That is, if a single item already represents multiple items in the standard inventory (very common with consumables), it still counts as a single item in Loadouts. So if a bundle of arrows held 5x arrows and you wanted an entire quiver to hold 20 arrows, the stack size for the quiver would be 4 to support 4 bundles of 5 arrows. Loadouts add-on modules may implement system-specific support for item quantity at their discretion.)_

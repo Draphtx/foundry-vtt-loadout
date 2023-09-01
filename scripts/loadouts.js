@@ -414,8 +414,8 @@ export class LoadoutsToken extends LoadoutsObject {
             texture: {
                 src: this.objectDocument.flags.loadouts.img,
                 // Incorporate the rotation checks right here
-                scaleX: this.itemRotation ? this.objectDocument.flags.loadouts.height : undefined,
-                scaleY: this.itemRotation ? this.objectDocument.flags.loadouts.height : undefined,
+                scaleX: this.objectDocument.flags?.loadouts?.scale || 1.0,
+                scaleY: this.objectDocument.flags?.loadouts?.scale || 1.0,
                 rotation: this.itemRotation
             },
             width: this.itemRotation ? this.objectDocument.flags.loadouts.height : this.objectDocument.flags.loadouts.width,
