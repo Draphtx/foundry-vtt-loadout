@@ -43,7 +43,7 @@ new Dialog({
       </div>
     </div>
     
-    <!-- Text input-->
+    <!-- Number input-->
     <div class="form-group">
       <label class="col-md-4 control-label" for="tokenWidth">Token Width</label>  
       <div class="col-md-4">
@@ -52,7 +52,7 @@ new Dialog({
       </div>
     </div>
     
-    <!-- Text input-->
+    <!-- Number input-->
     <div class="form-group">
       <label class="col-md-4 control-label" for="tokenHeight">Token Height</label>  
       <div class="col-md-4">
@@ -60,13 +60,23 @@ new Dialog({
       <span class="help-block">In grid units, not px</span>  
       </div>
     </div>
+
+    <!-- Range input-->
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="tokenScale">Token Scale</label>  
+      <div class="col-md-4">
+      <input id="tokenScale" name="tokenScale" type="range" min="0.1" max="1" step="0.1" defaultValue="1" value="1" oninput="document.getElementById('rangeValLabel').innerHTML = this.value;"></input>
+      <span class="help-block">Scale: </span>
+      <em id="rangeValLabel" style="font-style: normal;">1</em>
+      </div>
+    </div>
     
-    <!-- Text input-->
+    <!-- Number input-->
     <div class="form-group">
       <label class="col-md-4 control-label" for="stackSize">Stack Size</label>  
       <div class="col-md-4">
       <input id="stackSize" name="stackSize" type="text" maxlength="2" oninput="this.value=this.value.replace(/[^0-9]/g,'');" value="1" class="form-control input-md" required="">
-      <span class="help-block">Maximum stack size</span>  
+      <span class="help-block">Maximum stack size</span>
       </div>
     </div>
 
