@@ -201,7 +201,6 @@ export class LoadoutsItem extends LoadoutsObject {
         this.removedItemToken = findItemTokenAcrossScenes(loadoutsScenes);
     };
     
-
     removeLoadoutsItem() {
         const membersArray = this.removedItemToken.flags.loadouts.stack.members;
         const index = membersArray.indexOf(this.objectDocument.id);
@@ -405,7 +404,7 @@ export class LoadoutsToken extends LoadoutsObject {
                     "linked": true,
                     "owner": this.objectDocument.parent.id,
                     "truename": this.objectDocument.name,
-                    "scale": this.objectDocument.flags?.loadouts?.scale,
+                    "scale": this.objectDocument.flags?.loadouts?.scale || 1.0,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
