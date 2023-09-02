@@ -1,39 +1,48 @@
 let itemDropdown = "";
 const loadoutsTypes = game.settings.get("loadouts", "loadouts-managed-item-types")
 
-for(const loadoutsType of loadoutsTypes.split(',')){
+for(const loadoutsType of loadoutsTypes.split(',')) {
     itemDropdown +="<option disabled>" + loadoutsType.toUpperCase() + "</option>"
     var itemArray = game.items.filter(item => item.type == loadoutsType).sort((a, b) => a.name.localeCompare(b.name));
     for (let i = 0; i < itemArray.length; i++) {
         var isConfigured
         if(itemArray[i].flags.loadouts){
-            if(itemArray[i].flags.loadouts.configured == true){
+            if(itemArray[i].flags.loadouts.configured == true) {
                 isConfigured = "&#x25C9;"
             } else {
                 isConfigured = "&#x25CC;"
             }
         } else {
             isConfigured = "&#x25CC;"
-        }
+        };
         itemDropdown += "<option value='" + itemArray[i].id + "'>" + itemArray[i].name + " " + isConfigured + "</option>";
-    }
-}
+    };
+};
 
 new Dialog({
     // TODO: Increase select width to accomodate long item names
-    title: "Loadouts",
+    title: "Loadouts Item Configuration",
     content: `
     <form class="form-horizontal">
     <fieldset>
     
     <!-- Form Name -->
-    <legend>Item Configuration</legend>
+    <legend>Item Selection</legend>
      
     <!-- Item Dropdown -->
     <div class="form-group">
         <label for="selectedItems" style='display:inline-block;'>Select Item</label>
         <select id="selectedItems" name="selectedItems" multiple style='width:58%; margin:4px 1%; display:inline-block;'>` + itemDropdown + `</select>
     </div>
+
+    </fieldset>
+    </form>
+
+    <form class="form-horizontal">
+    <fieldset>
+    
+    <!-- Form Name -->
+    <legend>Appearance</legend>
 
     <!-- Text input-->
     <div class="form-group">
@@ -70,7 +79,24 @@ new Dialog({
       <em id="rangeValLabel" style="font-style: normal;">1</em>
       </div>
     </div>
+
+    <!-- Range input-->
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="lockOrientation">Lock Orientation</label>  
+      <div class="col-md-4">
+      <input id="lockOrientation" name="lockOrientation" type="checkbox"></input>
+      </div>
+    </div>
+
+    </fieldset>
+    </form>
+
+    <form class="form-horizontal">
+    <fieldset>
     
+    <!-- Form Name -->
+    <legend>Properties</legend>
+
     <!-- Number input-->
     <div class="form-group">
       <label class="col-md-4 control-label" for="stackSize">Stack Size</label>  
@@ -107,6 +133,7 @@ new Dialog({
                 html.find('[name="tokenWidth"]').val(),
                 html.find('[name="tokenHeight"]').val(),
                 html.find('[name="tokenScale"]',).val(),
+                html.find('[name="lockOrientation"]',).val(),
                 html.find('[name="stackSize"]').val(),
                 html.find('[name="loadoutsTag"]').val() || null
             )
@@ -114,7 +141,7 @@ new Dialog({
     }
 }).render(true);
 
-async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag) {
+async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, lockOrientation, stackSize, loadoutsTag) {
     // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
     await game.items.get(itemId).update({
@@ -125,18 +152,19 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
                 width: parseInt(tokenWidth),
                 height: parseInt(tokenHeight),
                 scale: tokenScale,
+                orientationLock: lockOrientation,
                 stack: {max: parseInt(stackSize)},
                 loadoutsTag: loadoutsTag
             }
         }
-    })
+    });
 };
 
-async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag) {
+async function configureLoadoutsItem(itemIds, imagePath, tokenWidth, tokenHeight, tokenScale, lockOrientation, stackSize, loadoutsTag) {
     console.log("Configuring items")
     itemIds = itemIds.filter(x => x !== undefined);
     for(const itemId of itemIds){
-        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, stackSize, loadoutsTag)
+        setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, lockOrientation, stackSize, loadoutsTag)
     }
     
     ui.notifications.info("Loadouts: configured " + itemIds.length + " items for management")
