@@ -1,5 +1,15 @@
 # foundry-vtt-loadouts
 
+### 2.4.6a
+- Bug fixes to scaling when items are rotated
+- Added orientation lock option for item configurations
+- Reworked item configurator
+
+### 2.4.5a
+- Bug fixes to item rotation
+- Major revision of blocking token logic
+- Introduction of texture scaling
+
 ### 2.4.4a
 - Fixed a bug with tile deletion
 - Fixed nameplates settings

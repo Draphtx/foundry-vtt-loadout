@@ -144,6 +144,7 @@ new Dialog({
 async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, tokenScale, lockOrientation, stackSize, loadoutsTag) {
     // TODO: Ensure that the path exists before making any changes
     console.log("Setting Loadouts item flags for " + itemId)
+    const lockOrientationCheckbox = document.getElementById('lockOrientation');
     await game.items.get(itemId).update({
         flags: {
             loadouts: {
@@ -151,8 +152,8 @@ async function setLoadoutsItemFlags(itemId, imagePath, tokenWidth, tokenHeight, 
                 img: imagePath,
                 width: parseInt(tokenWidth),
                 height: parseInt(tokenHeight),
-                scale: tokenScale,
-                orientationLock: lockOrientation,
+                scale: parseFloat(tokenScale),
+                orientationLock: lockOrientationCheckbox.checked,
                 stack: {max: parseInt(stackSize)},
                 loadoutsTag: loadoutsTag
             }

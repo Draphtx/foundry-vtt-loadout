@@ -337,9 +337,8 @@ export class LoadoutsToken extends LoadoutsObject {
         };
         for (const loadoutsTile of orderedTiles) {
             let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
-            if(! tilePositions.length) {
+            if((!tilePositions.length) && (!this.objectDocument.flags.loadouts?.orientationLock)) {
                 if(this.objectDocument.flags.loadouts.width != this.objectDocument.flags.loadouts.height) {
-                    console.log("Trying rotated object")
                     tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.height, this.objectDocument.flags.loadouts.width)
                     if(tilePositions.length) {
                         this.itemRotation = 90
@@ -405,6 +404,7 @@ export class LoadoutsToken extends LoadoutsObject {
                     "owner": this.objectDocument.parent.id,
                     "truename": this.objectDocument.name,
                     "scale": this.objectDocument.flags?.loadouts?.scale || 1.0,
+                    "orientationLock": this.objectDocument.flags.loadouts?.orientationLock,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
@@ -414,15 +414,20 @@ export class LoadoutsToken extends LoadoutsObject {
             texture: {
                 src: this.objectDocument.flags.loadouts.img,
                 // Incorporate the rotation checks right here
-                scaleX: this.objectDocument.flags?.loadouts?.scale || 1.0,
-                scaleY: this.objectDocument.flags?.loadouts?.scale || 1.0,
+                scaleX: this.itemRotation 
+                    ? (this.objectDocument.flags.loadouts.height * (this.objectDocument.flags.loadouts?.scale || 1.0))
+                    : (this.objectDocument.flags.loadouts?.scale || 1.0),
+                scaleY: this.itemRotation 
+                    ? (this.objectDocument.flags.loadouts.height * (this.objectDocument.flags.loadouts?.scale || 1.0))
+                    : (this.objectDocument.flags.loadouts?.scale || 1.0),
                 rotation: this.itemRotation
             },
             width: this.itemRotation ? this.objectDocument.flags.loadouts.height : this.objectDocument.flags.loadouts.width,
             height: this.itemRotation ? this.objectDocument.flags.loadouts.width : this.objectDocument.flags.loadouts.height,
             x: this.selectedPosition.x1,
             y: this.selectedPosition.y1,
-            rotation: this.itemRotation
+            rotation: this.itemRotation,
+            lockRotation: this.objectDocument.flags.loadouts?.orientationLock || false
         }
     };
 
