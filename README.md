@@ -26,9 +26,9 @@ _As this is in an alpha stage and many customization elements are still in devel
 
 # Configuration Options
 ## <a name="system-options"></a>System Options
-`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. _This list will only include types of item that are represented in your local game - that is, items you have imported from system compendiums or created yourself and which show up under the GM's Items toolbar._
+`Managed Item Types` Lets you specify which types of items (as defined by the Foundry system being used) are available for management by Loadouts. _This list will only include types of item that you have created an instance of. That is, a `weapon` option will not be displayed unless you have created or imported a weapon item prior._
 
-`Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts. _This list will only include types of actor that you have created an instance of. That is, an `npc` option will not be displayed unless you have created an NPC actor prior._
+`Managed Actor Types` Foundry systems have different actor types for things like player characters, NPCs, vehicles, etc. Here you can choose which types of actors are allowed to have inventories that may interact with Loadouts. _This list will only include types of actor that you have created an instance of. That is, an `npc` option will not be displayed unless you have created or imported an NPC actor prior._
 
 `Allow Unconfigured Items` Some items that are part of a Loadouts-managed item type may not qualify as items that you wish Loadouts to represent visually. For instance, Cyberpunk Red players may have the 'Martial Arts' skill which is represented as a weapon item to allow attack rolls, but which would not take up carry space in a Loadout. By leaving the item unconfigured and setting this option to True, players can still add the item to their sheet. 
 
@@ -82,7 +82,7 @@ _Note that weight distribution is impacted by the `Prefer Local Tiles` option in
 
 `Item Tags` (optional) A comma-separated list of Loadouts tags that may be added to the tile. For example, maybe a druid's herb pouch would only accept items configured with the Loadouts tag *herb* rather than everything in the system type *ingredient*. If `Item Types` is also set, this is a secondary filter - i.e. both Type and Tag must match for the item to be eligible.
 
-`Equipped State` designates whether the tile is carried or simply owned; that is, whether the inventory items in the tile are considered actively carried by the player or part of a stash left at another location.
+`Equipped State` designates whether the tile is carried or simply owned; that is, whether the inventory items in the tile are considered actively carried by the player or part of storage that is tied to its local scene.
 
 Like it? Love it?
 https://www.buymeacoffee.com/draphtx

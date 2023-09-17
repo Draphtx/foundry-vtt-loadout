@@ -2,7 +2,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
     
     // Dynamic settings
 
-    // Configure managed item types based on current types present
+    //// Configure managed item types based on current types present
     let systemItemTypes = new Set();
     game.items.forEach(function(obj){
         systemItemTypes.add(obj.type);
@@ -24,7 +24,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: String
     });
 
-    // Configure managed actor types based on current types present
+    //// Configure managed actor types based on current types present
     let systemActorTypes = new Set();
     game.actors.forEach(function(obj){
         systemActorTypes.add(obj.type);
