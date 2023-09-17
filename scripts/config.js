@@ -1,40 +1,64 @@
 Hooks.once("ready", function () {  // Due to some of the calls we make to populate lists, this can't register at init time
     
-    // Get all item types for the configuration option
+    // Dynamic settings
+
+    // Configure managed item types based on current types present
     let systemItemTypes = new Set();
     game.items.forEach(function(obj){
         systemItemTypes.add(obj.type);
     })
     systemItemTypes = Array.from(systemItemTypes).sort();
+    
+    if(!systemItemTypes.length > 0) {
+        managedItemTypeHint = "no local item types available for configuration; see docs"
+    } else {
+        managedItemTypeHint = "A comma-separated list of item types to be managed by Loadouts (current game choices are: " + systemItemTypes + ")";
+    };
 
     game.settings.register("loadouts", "loadouts-managed-item-types", {
         name: "Managed Item Types",
-        hint: "A comma-separated list of item types to be managed by Loadouts (for " + game.system.id + " choices are: " + systemItemTypes + ")",
+        hint: managedItemTypeHint,
         scope: "world",
         config: true,
-        default: "weapon",
+        default: systemItemTypes[0] || null,
         type: String
     });
 
-    // Get all actor types for the configuration option
+    // Configure managed actor types based on current types present
     let systemActorTypes = new Set();
     game.actors.forEach(function(obj){
         systemActorTypes.add(obj.type);
     })
     systemActorTypes = Array.from(systemActorTypes).sort();
 
+    if(!systemActorTypes.length > 0) {
+        managedActorTypeHint = "no local actor types available for configuration; see docs"
+    } else {
+        managedActorTypeHint = "A comma-separated list of actor types to be managed by Loadouts (current game choices are: " + systemActorTypes + ")";
+    };
+
+    // Static settings
     game.settings.register("loadouts", "loadouts-managed-actor-types", {
         name: "Managed Actor Types",
-        hint: "A comma-separated list of actor types that may utilize Loadouts (for " + game.system.id + " choices are: " + systemActorTypes + ")",
+        hint: managedActorTypeHint,
         scope: "world",
         config: true,
-        default: "character",
+        default: systemActorTypes[0] || null,
         type: String
     });
 
     game.settings.register("loadouts", "loadouts-allow-unconfigured-items", {
         name: "Allow Unconfigured Items",
         hint: "Allows players to add unconfigured items to their inventories",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
+
+    game.settings.register("loadouts", "loadouts-prefer-local-tiles", {
+        name: "Prefer Local Tiles",
+        hint: "When adding items, prefer tiles on the currently-viewed scene",
         scope: "world",
         config: true,
         default: true,
@@ -93,7 +117,6 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: Number
     });
 
-    // Stacked item overlay icon
     game.settings.register("loadouts", "loadouts-stack-overlay", {
         name: "Stacks Overlay Icon",
         hint: "Set a custom icon for stacked Loadouts items",
@@ -101,16 +124,6 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         config: true,
         default: "modules/loadouts/artwork/overlays/stack-overlay.webp",
         type: String
-    });
-
-    // Stacked item overlay icon
-    game.settings.register("loadouts", "loadouts-prefer-local-tiles", {
-        name: "Prefer Local Tiles",
-        hint: "When adding items, prefer tiles on the currently-viewed scene",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean
     });
 
 });

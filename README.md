@@ -34,6 +34,8 @@ _As this is in an alpha stage and many customization elements are still in devel
 
 On the other hand you may prefer that EVERYTHING be visually represented, in which case you would uncheck this box to strictly enforce Loadouts management. In such a case, were a player to attempt to add an unconfigured item, the player will get a UI notification that the item is not configured for Loadouts and cannot be added to their inventory. If the item was necessary, the GM would either need to add it for them or configure the item for Loadouts.
 
+`Prefer Local Tiles` When activated, any valid item slots in the scene currently viewed by the triggering client session are weighted more strongly overall than those in other scenes. See [Tile Options](#tile-options) for more information on preference weight.
+
 `Enable Remote Stashing` Loadouts supports the idea of 'carried' vs 'owned' inventories. Like a chest in a fantasy game, you may choose for the players to have inventories that are not carried on their person but must be accessed from a certain location like a camp or safehouse. Enabling this option allows players the option to 'teleport' new items to remote locations if they do not have room to carry the items on their person.
 
 `Enable Add When Full` If a player has no inventory slots available on their person, and Remote Stashing is not enabled or stashes are also full, the player will have the choice to add the item to their inventory without the accompanying Loadouts configuration and token. If disabled, the player will simply get a message that their inventory is full and the item may not be added.
@@ -43,8 +45,6 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 `Show Stack Bar` Uses the token's 'health' bar to display the number of items in stack.
 
 `Stack Overlay Icon` Allows you to set an image path for an overlay that is shown over the tokens of an item stack. Set to empty to disable.
-
-`Prefer Local Tiles` When activated, slots in the currently viewed scene are weighted more strongly overall than those in other scenes. See [Tile Options](#tile-options) for more information on preference weight.
 
 ## Item Options
 `Image Path` Determines which image is used to represent the item in a Loadouts inventory.
@@ -56,7 +56,7 @@ On the other hand you may prefer that EVERYTHING be visually represented, in whi
 `Token Scale` Set the token image's scale. This is to allow for situations where the token's image would cover a graphical grid image at full size (e.g. if your grid has borders) or comes too close to the grid line for asthetic comfort. _Note that this changes the scale of the image within the token's bounds, NOT how many grid units the token represents, which is still a function of Token Width / Height._
 
 `Stack Size` If more than one of the item should be able to fit in a slot, define how many can be stacked in that one inventory slot. E.g. a quiver that can fit 10 arrows. This number must be at least 1.
-_(Note that the core Loadouts module does not support item quantities at this time. That is, if a single item already represents multiple items in the standard inventory (very common with consumables), it still counts as a single item in Loadouts. So if a bundle of arrows held 5x arrows and you wanted an entire quiver to hold 20 arrows, the stack size for the quiver would be 4 to support 4 bundles of 5 arrows. Loadouts add-on modules may implement system-specific support for item quantity at their discretion.)_
+_(Note that the core Loadouts module does not support item quantities at this time. That is, if a single item already represents multiple items in the game's inventory system (very common with consumables), it still counts as a single item in Loadouts. So if a bundle of arrows held 5x arrows and you wanted an entire quiver to hold 20 arrows, the stack size for the quiver would be 4 to support 4 bundles of 5 arrows, and the nameplate and bar counters would reflect the bundle count rather than the individual arrows. This is for compatibility purposes in the core module - Loadouts add-on modules may implement system-specific support for item quantity at their discretion.)_
 
 `Loadouts Tag` A single alphanumeric tag of 25 characters or less which can be used by Loadouts tiles to filter incoming items. For example, maybe bullets and grenades are both of the type *ammunition* in the game system, but you want grenades to always go to a bandolier slot. By setting a Loadouts tag of 'grenade' we can use the tile configuration options to ensure that our bandolier accepts only grenades and our ammo pouches only ammunition.
 

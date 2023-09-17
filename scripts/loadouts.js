@@ -59,25 +59,27 @@ export class LoadoutsItem extends LoadoutsObject {
         const managedActorTypes = game.settings.get("loadouts", "loadouts-managed-actor-types");
         const managedItemTypes = game.settings.get("loadouts", "loadouts-managed-item-types");
         const allowUnconfiguredItems = game.settings.get('loadouts', 'loadouts-allow-unconfigured-items');
+        function logSuitabilityFailure(reason=undefined) {
+            console.debug(`Loadouts | item ${this.objectDocument.name} skipped by suitability checks: ${reason}`);
+        };
         
         // Do not try to handle item management for unwanted actor types
         if (!managedActorTypes.includes(this.objectDocument.parent.type)) {
-            console.debug(`Loadouts | actor type '${this.objectDocument.parent.type}' not managed`);
+            logSuitabilityFailure("parent of added item is not of managed type");
             return false;
         };
     
         if (!managedItemTypes.includes(this.objectDocument.type)) {
-            console.debug(`Loadouts | item type '${this.objectDocument.type}' not managed`);
+            logSuitabilityFailure("added item is not of managed type");
             return false;
         };
     
         if ("loadouts" in this.objectDocument.flags) {
-            console.debug(`▞▖Loadouts:: ${this.objectDocument.name} of type '${this.objectDocument.type}' is configured for management`);
             return true;
         };
     
         if (allowUnconfiguredItems) {
-            console.debug(`Loadouts | ${this.objectDocument.name} of type '${this.objectDocument.type}' not flagged but unconfigured items setting is set to permissive.`);
+            logSuitabilityFailure("added item is not configured (but unconfigured items are allowed)");
             return false;
         };
     
@@ -143,7 +145,7 @@ export class LoadoutsItem extends LoadoutsObject {
         
         try {
             loadoutsStack.update(updateData);
-            ui.notifications.info("Loadouts: " + this.objectDocument.parent.name + " added " + this.objectDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
+            ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} added ${this.objectDocument.name} to an existing stack in ${loadoutsTile.parent.name}`);
             return true;
         } catch (error) {
             console.warn(`Loadouts | unable to update stack ${loadoutsStack.id}`);
@@ -155,7 +157,6 @@ export class LoadoutsItem extends LoadoutsObject {
     processNewItem() {
         // Perform checks to ensure that the item is one we will try to handle using the loadout system
         if(! this.verifyItemSuitability()) {
-            console.debug("Loadouts | item " + this.objectDocument.name + " discarded by suitability checks");
             return;
         }
 
@@ -275,18 +276,18 @@ export class LoadoutsToken extends LoadoutsObject {
         // Find the actor who owns the item linked to the Loadouts token
         this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
         if((this.tokenOwner == null) || (this.tokenOwner == undefined)) {
-            console.warn("Loadouts | unable to find an item owner associated with a token recently updated by " + this.triggeringUser.name);
+            console.warn(`Loadouts | unable to find an item owner associated with a token recently updated by ${this.triggeringUser.name}`);
             return;
         };
         if((this.tokenOwner.id != this.triggeringUser.id) && (this.triggeringUser.role != 4)) {
             // TODO: This is not technically true for now - they can move the token, but they'll get a warning
-            ui.notification.warn("Loadouts: users can only move Loadouts tokens linked to an item in their inventory")        
+            ui.notification.warn(`Loadouts: users can only move Loadouts tokens linked to an item in their inventory`)
             return;
         };
 
         const linkedItems = this.objectDocument.flags.loadouts.stack.members
         if(!linkedItems.length > 0) {
-            console.warn("Loadouts | unable to find item(s) associated with a token recently updated by " + this.triggeringUser.name);
+            console.warn(`Loadouts | unable to find item(s) associated with a token recently updated by ${this.triggeringUser.name}`);
             return;
         };
         
@@ -404,7 +405,7 @@ export class LoadoutsToken extends LoadoutsObject {
                     "owner": this.objectDocument.parent.id,
                     "truename": this.objectDocument.name,
                     "scale": this.objectDocument.flags?.loadouts?.scale || 1.0,
-                    "orientationLock": this.objectDocument.flags.loadouts?.orientationLock,
+                    "orientationLock": this.objectDocument.flags.loadouts?.orientationLock || false,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
