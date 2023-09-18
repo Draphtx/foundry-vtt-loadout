@@ -13,6 +13,20 @@ class LoadoutsObject {
         return game.scenes.active.id;
     };
 
+    /**
+     * Set a nested property of an object based on a dot-separated string path.
+     * 
+     * @param {object} obj - The target object.
+     * @param {string} path - The dot-separated path to the property.
+     * @param {any} value - The value to set.
+     */
+    setNestedProperty(obj, path, value) {
+        let parts = path.split('.');
+        let last = parts.pop();
+        let target = parts.reduce((o, part) => o[part] = o[part] || {}, obj);
+        target[last] = value;
+    };
+
     findValidTiles() {
         const loadoutsScenes = game.scenes.filter(
             scene => scene.flags.loadouts).filter(
@@ -120,15 +134,8 @@ export class LoadoutsItem extends LoadoutsObject {
             name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
             displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
             displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
-            actorData: {
-                system: {
-                    derivedStats: {
-                        hp: {
-                            max: this.objectDocument.flags.loadouts.stack.max,
-                            value: membershipIds.length,
-                        }
-                    }
-                }
+            bar2: {
+                attribute: game.settings.get("loadouts", "loadouts-stack-bar-attribute") || null
             },
             flags: {
                 loadouts: {
@@ -137,6 +144,11 @@ export class LoadoutsItem extends LoadoutsObject {
                     }
                 }
             }
+        };
+
+        if(!game.settings.get("loadouts", "loadouts-stack-bar-attribute") == null) {
+            this.setNestedProperty(updateData.actorData.system, `${game.settings.get("loadouts", "loadouts-stack-bar-attribute")}.max`, this.objectDocument.flags.loadouts.stack.max);
+            this.setNestedProperty(updateData.actorData.system, `${game.settings.get("loadouts", "loadouts-stack-bar-attribute")}.value`, membershipIds.length);
         };
     
         if (membershipIds.length > 1) {
@@ -215,15 +227,8 @@ export class LoadoutsItem extends LoadoutsObject {
                 name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
                 displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
                 displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
-                actorData: {
-                    system: {
-                        derivedStats: {
-                            hp: {
-                                max: this.objectDocument.flags.loadouts.stack.max,
-                                value: membersArray.length,
-                            }
-                        }
-                    }
+                bar2: {
+                    attribute: game.settings.get("loadouts", "loadouts-stack-bar-attribute") || null
                 },
                 flags: {
                     loadouts: {
@@ -232,6 +237,11 @@ export class LoadoutsItem extends LoadoutsObject {
                         }
                     },
                 });
+
+                if(!game.settings.get("loadouts", "loadouts-stack-bar-attribute") == null) {
+                    this.setNestedProperty(updateData.actorData.system, `${game.settings.get("loadouts", "loadouts-stack-bar-attribute")}.max`, this.objectDocument.flags.loadouts.stack.max);
+                    this.setNestedProperty(updateData.actorData.system, `${game.settings.get("loadouts", "loadouts-stack-bar-attribute")}.value`, membershipIds.length);
+                };
             ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
             if(membersArray.length == 1) {
                 this.removedItemToken.update({

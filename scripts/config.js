@@ -100,9 +100,18 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: Number
     });
 
+    game.settings.register("loadouts", "loadouts-stack-bar-attribute", {
+        name: "Stack Bar Attribute",
+        hint: "The actor attribute used to track stack size. See documentation.",
+        scope: "world",
+        config: true,
+        default: null,
+        type: String
+    });
+
     game.settings.register("loadouts", "loadouts-show-stack-bar", {
         name: "Show Stack Bar",
-        hint: "For tokens in stacks, display stack quantity using the health bar",
+        hint: "For tokens in stacks, display stack quantity using the secondary resource bar. Requires Stack Bar Attribute to be properly set.",
         scope: "world",
         config: true,
         default: 50,
