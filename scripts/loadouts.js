@@ -133,7 +133,7 @@ export class LoadoutsItem extends LoadoutsObject {
         const updateData = {
             name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
             displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
-            displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+            displayBars: game.settings.get("loadouts", "loadouts-show-item-bars"),
             bar2: {
                 attribute: game.settings.get("loadouts", "loadouts-stack-bar-attribute") || null
             },
@@ -226,7 +226,7 @@ export class LoadoutsItem extends LoadoutsObject {
             this.removedItemToken.update({
                 name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
                 displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
-                displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+                displayBars: game.settings.get("loadouts", "loadouts-show-item-bars"),
                 bar2: {
                     attribute: game.settings.get("loadouts", "loadouts-stack-bar-attribute") || null
                 },
@@ -245,7 +245,6 @@ export class LoadoutsItem extends LoadoutsObject {
             ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
             if(membersArray.length == 1) {
                 this.removedItemToken.update({
-                    displayBars: 0,
                     overlayEffect: "",
                     name: this.objectDocument.name,
                 })
@@ -407,7 +406,10 @@ export class LoadoutsToken extends LoadoutsObject {
         this.itemTokenSettings = {
             name: this.objectDocument.name,
             actorLink: false,
-            displayName: 30,
+            displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
+            bar1: {
+                attribute: null
+            },
             flags: {
                 loadouts: {
                     "managed": true,

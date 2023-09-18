@@ -109,7 +109,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
         type: String
     });
 
-    game.settings.register("loadouts", "loadouts-show-stack-bar", {
+    game.settings.register("loadouts", "loadouts-show-item-bars", {
         name: "Show Stack Bar",
         hint: "For tokens in stacks, display stack quantity using the secondary resource bar. Requires Stack Bar Attribute to be properly set.",
         scope: "world",
