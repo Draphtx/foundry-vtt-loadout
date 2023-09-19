@@ -67,7 +67,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
 
     game.settings.register("loadouts", "loadouts-teleport-to-stash", {
         name: "Enable Remote Stashing",
-        hint: "When a 'carried' slot cannot be found, the player may choose to 'teleport' the item back to an uncarried stash",
+        hint: "When a 'carried' slot cannot be found, the player may choose to 'teleport' the item back to an off-scene location",
         scope: "world",
         config: true,
         default: false,

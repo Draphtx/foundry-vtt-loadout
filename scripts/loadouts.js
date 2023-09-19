@@ -475,3 +475,46 @@ export class LoadoutsToken extends LoadoutsObject {
         ui.notifications.info(`Loadouts: removed '${this.objectDocument.name}' from ${this.tokenOwner.name}'s loadout in '${this.objectDocument.parent.name}'`);
     };
 };
+
+export class LoadoutsSettingUpdate extends LoadoutsItem {
+    constructor(objectDocument, _, _) {
+        super(objectDocument);
+    };
+
+    locateTokens() {
+        loadoutsTokenManifest = [];
+        const getLoadoutsScenes = () => {
+            return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
+        };
+        
+        const findItemTokensInScene = (scene) => {
+            return scene.tokens.contents.find(token => 
+                token.flags.loadouts
+            );
+        };
+        
+        const findItemTokenAcrossScenes = (scenes) => {
+            let loadoutsItemToken = null; // Initialized to null instead of false for clarity
+            for (const loadoutsScene of scenes) {
+                loadoutsItemTokens = findItemTokensInScene(loadoutsScene);
+                loadoutsTokenManifest.push
+            };
+            return loadoutsItemToken;
+        };
+        
+        const loadoutsScenes = getLoadoutsScenes();
+    }
+
+    propagateChange() {
+        // Get all Loadouts tokens
+
+        // Figure out what changed... ? May need a map here...
+        //// setting name : token property
+        const settingsMap = {
+            "loadouts-token-names": "displayName"
+        };
+
+    }
+
+
+};
