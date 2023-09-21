@@ -493,16 +493,16 @@ export class LoadoutsSettingUpdate extends LoadoutsItem {
             );
         };
         
-        const findItemTokenAcrossScenes = (scenes) => {
+        const findItemTokensAcrossScenes = (scenes) => {
             let loadoutsItemToken = null; // Initialized to null instead of false for clarity
             for (const loadoutsScene of scenes) {
                 loadoutsItemTokens = findItemTokensInScene(loadoutsScene);
                 loadoutsTokenManifest.push
             };
-            return loadoutsItemToken;
         };
         
         const loadoutsScenes = getLoadoutsScenes();
+        return findItemTokensAcrossScenes(loadoutsScenes);
     }
 
     propagateChange() {
@@ -514,7 +514,13 @@ export class LoadoutsSettingUpdate extends LoadoutsItem {
             "loadouts-token-names": "displayName"
         };
 
-    }
+        const loadoutsTokens = this.locateTokens();
+        for (const tokenDocument of loadoutsTokens) {
+            tokenDocument.update({
+                displayName: game.settings.get("loadouts", "loadouts-token-names")
+            })
+        };
+    };
 
 
 };
