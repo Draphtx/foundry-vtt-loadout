@@ -78,7 +78,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
 
     game.settings.register("loadouts", "loadouts-show-stack-bar", {
         name: "Show Stack Bar",
-        hint: "For tokens in stacks, display stack quantity using the health bar",
+        hint: "Display quantity using the health bar (requires system-specific stack support)",
         scope: "world",
         config: true,
         default: 50,
@@ -96,7 +96,7 @@ Hooks.once("ready", function () {  // Due to some of the calls we make to popula
     // Stacked item overlay icon
     game.settings.register("loadouts", "loadouts-stack-overlay", {
         name: "Stacks Overlay Icon",
-        hint: "Set a custom icon for stacked Loadouts items",
+        hint: "Set custom icon for stacked Loadouts items (requires system-specific stack support)",
         scope: "world",
         config: true,
         default: "modules/loadouts/artwork/overlays/stack-overlay.webp",
