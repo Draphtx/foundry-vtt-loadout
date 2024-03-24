@@ -1,5 +1,8 @@
 # foundry-vtt-loadouts
 
+### 2.5.0
+- Added compendium image option to item configuration
+
 ### 2.4.4a
 - Fixed a bug with tile deletion
 - Fixed nameplates settings
