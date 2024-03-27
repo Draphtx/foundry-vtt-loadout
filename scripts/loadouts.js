@@ -49,10 +49,11 @@ class LoadoutsObject {
 };
 
 export class LoadoutsItem extends LoadoutsObject {
-    constructor(objectDocument, _, userId) {
+    constructor(objectDocument, diff, _, userId) {
         super(objectDocument);
         this.itemRotation = 0;
         this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 1;
+        this.diff = diff;
     };
 
     verifyItemSuitability() {
@@ -177,6 +178,14 @@ export class LoadoutsItem extends LoadoutsObject {
         loadoutsToken.createNewToken();
     };
 
+    processUpdatedItem() {
+        // See if the updated item is configured for Loadouts
+        console.log("Calling updated item from main module")
+        if(! this.objectDocument.flags?.loadouts ) {
+            return;
+        };
+    };
+
     locateRemovedItem() {
         const getLoadoutsScenes = () => {
             return game.scenes.filter(scene => scene.flags?.loadouts?.isLoadoutsScene);
@@ -201,7 +210,6 @@ export class LoadoutsItem extends LoadoutsObject {
         this.removedItemToken = findItemTokenAcrossScenes(loadoutsScenes);
     };
     
-
     removeLoadoutsItem() {
         const membersArray = this.removedItemToken.flags.loadouts.stack.members;
         const index = membersArray.indexOf(this.objectDocument.id);
@@ -311,18 +319,34 @@ export class LoadoutsToken extends LoadoutsObject {
         };
     };
 
+    /**
+     * Checks if a token/item lies completely within the specified boundaries.
+     * @param {Object} token - The token or item with x1, y1, x2, y2 properties.
+     * @param {Object} boundary - The boundary with x, y, width, height properties.
+     * @returns {boolean} - True if the token lies within the boundary, false otherwise.
+     */
+    isWithinBoundary(token, boundary) {
+        return (
+            token.x1 >= boundary.x && 
+            token.y1 >= boundary.y &&
+            token.x2 <= boundary.x + boundary.width &&
+            token.y2 <= boundary.y + boundary.height
+        );
+    };
+
     findTilePositions() {
         // Prefer tiles in the scene that the user is currently viewing
+        let orderedTiles = null;
         if(game.settings.get("loadouts", "loadouts-prefer-local-tiles")){
             const localTiles = this.validTiles.filter(tile => tile.parent.id == this.getViewedScene());
             const remoteTiles = this.validTiles.filter(tile => tile.parent.id != this.getViewedScene());
-            let orderedTiles = [...localTiles, ...remoteTiles];
+            orderedTiles = [...localTiles, ...remoteTiles];
         } else {
-            let orderedTiles = this.validTiles;
+            orderedTiles = this.validTiles;
         };
         for (const loadoutsTile of orderedTiles) {
             let tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.width, this.objectDocument.flags.loadouts.height);
-            if(! tilePositions.length) {
+            if((!tilePositions.length) && (!this.objectDocument.flags.loadouts?.orientationLock)) {
                 if(this.objectDocument.flags.loadouts.width != this.objectDocument.flags.loadouts.height) {
                     tilePositions = this.filterTilePositions(loadoutsTile, this.objectDocument.flags.loadouts.height, this.objectDocument.flags.loadouts.width)
                     if(tilePositions.length) {
@@ -338,44 +362,42 @@ export class LoadoutsToken extends LoadoutsObject {
         };
     };
 
-    filterTilePositions(loadoutsTile, itemSizeL, itemSizeH) {
+    filterTilePositions(loadoutsTile, itemSizeW, itemSizeH) {
         // TODO: need a way to 'reserve' certain slots at the tile configuration level, such that the whole slot is used (preferably)
         //// Currently we are covering for this by highly-prioritizing single-item slots, but that's just smoke & mirrors
         let itemPositions = []
         for(let rowNum of Array(loadoutsTile.height/loadoutsTile.parent.grid.size).keys()) {
             for(let colNum of Array(loadoutsTile.width/loadoutsTile.parent.grid.size).keys()) {
                 let tilePosition = {
-                    "x1": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size), "y1": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size), 
-                    "x2": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size) + (itemSizeL * loadoutsTile.parent.grid.size), "y2": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size) + (itemSizeH * loadoutsTile.parent.grid.size),
+                    "x1": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size), 
+                    "y1": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size), 
+                    "x2": loadoutsTile.x + (colNum * loadoutsTile.parent.grid.size) + (itemSizeW * loadoutsTile.parent.grid.size), 
+                    "y2": loadoutsTile.y + (rowNum * loadoutsTile.parent.grid.size) + (itemSizeH * loadoutsTile.parent.grid.size)
                 };
-                if((tilePosition.x1 + (itemSizeL * loadoutsTile.parent.grid.size) <= loadoutsTile.x + loadoutsTile.width) && (tilePosition.y1 + (itemSizeH * loadoutsTile.parent.grid.size) <= loadoutsTile.y + loadoutsTile.height)) {
-                    itemPositions.push(tilePosition)
+                if (this.isWithinBoundary(tilePosition, {x: loadoutsTile.x, y: loadoutsTile.y, width: loadoutsTile.width, height: loadoutsTile.height})) {
+                    itemPositions.push(tilePosition);
                 };
             };
         };
+        
         // Find any tokens that may already be over the tile's area
         let blockingTokens = loadoutsTile.parent.tokens.filter(
             t => t.x >= loadoutsTile.x <= (loadoutsTile.x + loadoutsTile.width) && 
                     t.y >= loadoutsTile.y <=(loadoutsTile.y + loadoutsTile.height))
-
-        // Here there be dragons. One liner that filters the potential token creation positions with the spaces blocked by existing tokens.
-        // There is something going on here with the use of the itemSize * gridSize that makes me have to do this extra step of determining 
-        // which filter to use...this should be refactorable to a single filter but my brain is refusing to deal with it right now.
-        for(let blockingToken of blockingTokens) {
-            // If the blockingToken is >= the new item, the item should use the filter but with Math.max
-            if(blockingToken.width >= itemSizeL || blockingToken.height > itemSizeH) {
-                itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.max(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.max(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
-                    )
-            // If the blockingToken is < the new item, the item should use the filter but with Math.min
-            } else {
-                itemPositions = itemPositions.filter(p => 
-                    p.x1 >= Math.min(blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size, blockingToken.x + itemSizeL * loadoutsTile.parent.grid.size) || blockingToken.x >= p.x2 || 
-                    p.y1 >= Math.min(blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size, blockingToken.y + itemSizeH * loadoutsTile.parent.grid.size) || blockingToken.y >= p.y2
-                    )
-            };
+        
+        function overlaps(tokenA, tokenB) {
+            return !(tokenA.x2 <= tokenB.x1 || tokenA.x1 >= tokenB.x2 || tokenA.y2 <= tokenB.y1 || tokenA.y1 >= tokenB.y2);
         };
+        
+        for(let blockingToken of blockingTokens) {
+            const blockingBoundary = {
+                x1: blockingToken.x,
+                y1: blockingToken.y,
+                x2: blockingToken.x + blockingToken.width * loadoutsTile.parent.grid.size,
+                y2: blockingToken.y + blockingToken.height * loadoutsTile.parent.grid.size
+            };
+            itemPositions = itemPositions.filter(p => !overlaps(p, blockingBoundary));
+        };        
         return itemPositions;
     };
 
@@ -390,6 +412,8 @@ export class LoadoutsToken extends LoadoutsObject {
                     "linked": true,
                     "owner": this.objectDocument.parent.id,
                     "truename": this.objectDocument.name,
+                    "scale": this.objectDocument.flags?.loadouts?.scale || 1.0,
+                    "orientationLock": this.objectDocument.flags.loadouts?.orientationLock,
                     "stack": {
                         "max": this.objectDocument.flags?.loadouts?.stack?.max,
                         "members": [this.objectDocument.id]
@@ -399,15 +423,20 @@ export class LoadoutsToken extends LoadoutsObject {
             texture: {
                 src: this.objectDocument.flags.loadouts.img,
                 // Incorporate the rotation checks right here
-                scaleX: this.itemRotation ? this.objectDocument.flags.loadouts.height : undefined,
-                scaleY: this.itemRotation ? this.objectDocument.flags.loadouts.height : undefined
+                scaleX: this.itemRotation 
+                    ? (this.objectDocument.flags.loadouts.height * (this.objectDocument.flags.loadouts?.scale || 1.0))
+                    : (this.objectDocument.flags.loadouts?.scale || 1.0),
+                scaleY: this.itemRotation 
+                    ? (this.objectDocument.flags.loadouts.height * (this.objectDocument.flags.loadouts?.scale || 1.0))
+                    : (this.objectDocument.flags.loadouts?.scale || 1.0),
+                rotation: this.itemRotation
             },
             width: this.itemRotation ? this.objectDocument.flags.loadouts.height : this.objectDocument.flags.loadouts.width,
             height: this.itemRotation ? this.objectDocument.flags.loadouts.width : this.objectDocument.flags.loadouts.height,
             x: this.selectedPosition.x1,
             y: this.selectedPosition.y1,
             rotation: this.itemRotation,
-            lockRotation: true
+            lockRotation: this.objectDocument.flags.loadouts?.orientationLock || false
         }
     };
 
