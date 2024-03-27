@@ -111,7 +111,7 @@ export class LoadoutsItem extends LoadoutsObject {
         return [false, false];
     };
 
-    updateStack(loadoutsTile, loadoutsStack) {
+    async updateStack(loadoutsTile, loadoutsStack) {
         const membershipIds = [...loadoutsStack.flags.loadouts.stack.members];
         membershipIds.push(this.objectDocument.id); 
     
@@ -119,7 +119,7 @@ export class LoadoutsItem extends LoadoutsObject {
             name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
             displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
             displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
-            actorData: {
+            actor: {
                 system: {
                     derivedStats: {
                         hp: {
@@ -143,7 +143,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
         
         try {
-            loadoutsStack.update(updateData);
+            await loadoutsStack.update(updateData);
             ui.notifications.info("Loadouts: " + this.objectDocument.parent.name + " added " + this.objectDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
             return true;
         } catch (error) {
@@ -153,7 +153,7 @@ export class LoadoutsItem extends LoadoutsObject {
         };
     };
 
-    processNewItem() {
+    async processNewItem() {
         // Perform checks to ensure that the item is one we will try to handle using the loadout system
         if(! this.verifyItemSuitability()) {
             console.debug("Loadouts | item " + this.objectDocument.name + " discarded by suitability checks");
@@ -167,7 +167,7 @@ export class LoadoutsItem extends LoadoutsObject {
         if(this.isStack) {
             const [loadoutsTile, loadoutsStack] = this.findValidStack();
             if(loadoutsTile) {
-                if(this.updateStack(loadoutsTile, loadoutsStack)) {
+                if(await this.updateStack(loadoutsTile, loadoutsStack)) {
                     return;
                 };
             };
@@ -175,7 +175,7 @@ export class LoadoutsItem extends LoadoutsObject {
 
         // Otherwise, try to create a new token
         const loadoutsToken = new LoadoutsToken(this.objectDocument);
-        loadoutsToken.createNewToken();
+        await loadoutsToken.createNewToken();
     };
 
     processUpdatedItem() {
@@ -223,7 +223,7 @@ export class LoadoutsItem extends LoadoutsObject {
                 name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
                 displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
                 displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
-                actorData: {
+                actor: {
                     system: {
                         derivedStats: {
                             hp: {
@@ -453,16 +453,16 @@ export class LoadoutsToken extends LoadoutsObject {
         if(! this.selectedPosition) {
             if(await notifyNoValidPositions(this.objectDocument)) {
                 this.defineNewToken();
-                this.placeToken();
+                await this.placeToken();
             };
         } else if((this.selectedTile.flags.loadouts.state == "local") && (this.selectedTile.parent.id != this.getViewedScene())) {
             if(await notifyNoCarriedPositions(this.objectDocument, this.selectedTile)) {
                 this.defineNewToken();
-                this.placeToken();
+                await this.placeToken();
             };
         } else {
             this.defineNewToken();
-            this.placeToken();
+            await this.placeToken();
         };
     };
 
