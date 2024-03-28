@@ -158,11 +158,17 @@ export class LoadoutsItem extends LoadoutsObject {
             let allTokens = scene.tokens.contents.filter(token => 
                 token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
             );
-
+            console.log("allTokens:")
+            console.log(allTokens)
+            // Use reduce to find the token with the smallest members array
             let smallestStack = allTokens.reduce((smallest, current) => {
+            // Check if the current token's members array is smaller than the smallest one found so far
             if (!smallest || (current.flags.loadouts.stack.members.length < smallest.flags.loadouts.stack.members.length)) {
-                return current;
-            } return smallest; }, allTokens[allTokens.length - 1]);
+                return current; // If so, the current token is now the smallest
+            }
+            return smallest; // Otherwise, return the previously found smallest token
+            }, allTokens[allTokens.length - 1]); // Initial value is null, in case allTokens is empty
+
             return smallestStack;
         };
         
@@ -180,46 +186,11 @@ export class LoadoutsItem extends LoadoutsObject {
     };
     
     removeLoadoutsItem() {
-        const membersArray = this.removedItemToken.flags.loadouts.stack.members;
-        const index = membersArray.indexOf(this.objectDocument.id);
+        this.membersArray = this.removedItemToken.flags.loadouts.stack.members;
+        const index = this.membersArray.indexOf(this.objectDocument.id);
         
         if (index > -1) {
-            membersArray.splice(index, 1);
-        };
-
-        if (membersArray.length > 0) {
-            this.removedItemToken.update({
-                name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
-                displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
-                displayBars: game.settings.get("loadouts", "loadouts-5e-show-quantity-bar"),
-                actor: {
-                    system: {
-                        derivedStats: {
-                            hp: {
-                                max: this.objectDocument.flags.loadouts.stack.max,
-                                value: membersArray.length,
-                            }
-                        }
-                    }
-                },
-                flags: {
-                    loadouts: {
-                        stack: {
-                            members: membersArray}
-                        }
-                    },
-                });
-            ui.notifications.info(`Loadouts: ${this.objectDocument.parent.name} removed '${this.objectDocument.name}' from a stack in '${this.removedItemToken.parent.name}'`);
-            if(membersArray.length == 1) {
-                this.removedItemToken.update({
-                    displayBars: 0,
-                    overlayEffect: "",
-                    name: this.objectDocument.name,
-                })
-            };
-        } else {
-            const loadoutsToken = new LoadoutsToken(this.removedItemToken);
-            loadoutsToken.removeLoadoutsToken();
+            this.membersArray.splice(index, 1);
         };
     };
 
