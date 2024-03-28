@@ -192,9 +192,19 @@ export class LoadoutsItem extends LoadoutsObject {
         };
         
         const findItemTokenInScene = (scene) => {
-            return scene.tokens.contents.find(token => 
+            let allTokens = scene.tokens.contents.filter(token => 
                 token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
             );
+
+            // Use reduce to find the token with the smallest members array. We do this to ensure that 
+            // the stack with the fewest members are deleted first, to reduce clutter.
+            let smallestStack = allTokens.reduce((smallest, current) => {
+
+            if(!smallest || (current.flags.loadouts.stack.members.length < smallest.flags.loadouts.stack.members.length)) {
+                return current;
+            } return smallest; }, allTokens[allTokens.length - 1]); // If no smallest stack is found, prefer the most-recently-created one
+
+            return smallestStack;
         };
         
         const findItemTokenAcrossScenes = (scenes) => {
@@ -255,7 +265,7 @@ export class LoadoutsItem extends LoadoutsObject {
     };
 
     processRemovedItem() {
-        if (!this.objectDocument.flags.loadouts) { return; };
+        if (!this.objectDocument.flags?.loadouts) { return; };
     
         this.locateRemovedItem()
         if(!this.removedItemToken) {
