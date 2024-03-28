@@ -111,46 +111,9 @@ export class LoadoutsItem extends LoadoutsObject {
         return [false, false];
     };
 
-    async updateStack(loadoutsTile, loadoutsStack) {
-        const membershipIds = [...loadoutsStack.flags.loadouts.stack.members];
-        membershipIds.push(this.objectDocument.id); 
-    
-        const updateData = {
-            name: `${loadoutsStack.flags.loadouts.truename} (x${membershipIds.length})`,
-            displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
-            displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
-            actor: {
-                system: {
-                    derivedStats: {
-                        hp: {
-                            max: this.objectDocument.flags.loadouts.stack.max,
-                            value: membershipIds.length,
-                        }
-                    }
-                }
-            },
-            flags: {
-                loadouts: {
-                    stack: {
-                        members: membershipIds
-                    }
-                }
-            }
-        };
-    
-        if (membershipIds.length > 1) {
-            updateData.overlayEffect = game.settings.get("loadouts", "loadouts-stack-overlay");
-        };
-        
-        try {
-            await loadoutsStack.update(updateData);
-            ui.notifications.info("Loadouts: " + this.objectDocument.parent.name + " added " + this.objectDocument.name + " to an existing stack in " + loadoutsTile.parent.name);
-            return true;
-        } catch (error) {
-            console.warn(`Loadouts | unable to update stack ${loadoutsStack.id}`);
-            console.error(`Loadouts | ${error}`);
-            return false;
-        };
+    async updateStack() {
+        this.membershipIds = [...this.loadoutsStack.flags.loadouts.stack.members];
+        this.membershipIds.push(this.objectDocument.id);
     };
 
     async processNewItem() {
@@ -167,7 +130,7 @@ export class LoadoutsItem extends LoadoutsObject {
         if(this.isStack) {
             const [loadoutsTile, loadoutsStack] = this.findValidStack();
             if(loadoutsTile) {
-                if(await this.updateStack(loadoutsTile, loadoutsStack)) {
+                if(await this.updateStack()) {
                     return;
                 };
             };
@@ -196,14 +159,10 @@ export class LoadoutsItem extends LoadoutsObject {
                 token.flags.loadouts?.stack?.members?.includes(this.objectDocument.id)
             );
 
-            // Use reduce to find the token with the smallest members array. We do this to ensure that 
-            // the stack with the fewest members are deleted first, to reduce clutter.
             let smallestStack = allTokens.reduce((smallest, current) => {
-
-            if(!smallest || (current.flags.loadouts.stack.members.length < smallest.flags.loadouts.stack.members.length)) {
+            if (!smallest || (current.flags.loadouts.stack.members.length < smallest.flags.loadouts.stack.members.length)) {
                 return current;
-            } return smallest; }, allTokens[allTokens.length - 1]); // If no smallest stack is found, prefer the most-recently-created one
-
+            } return smallest; }, allTokens[allTokens.length - 1]);
             return smallestStack;
         };
         
@@ -232,7 +191,7 @@ export class LoadoutsItem extends LoadoutsObject {
             this.removedItemToken.update({
                 name: this.objectDocument.name + (membersArray.length > 1 ? ` (x${membersArray.length})` : ''),
                 displayName: game.settings.get("loadouts", "loadouts-show-nameplates"),
-                displayBars: game.settings.get("loadouts", "loadouts-show-stack-bar"),
+                displayBars: game.settings.get("loadouts", "loadouts-5e-show-quantity-bar"),
                 actor: {
                     system: {
                         derivedStats: {
