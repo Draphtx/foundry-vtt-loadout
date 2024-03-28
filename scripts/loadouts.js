@@ -52,7 +52,7 @@ export class LoadoutsItem extends LoadoutsObject {
     constructor(objectDocument, diff, _, userId) {
         super(objectDocument);
         this.itemRotation = 0;
-        this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 1;
+        this.isStack = this.objectDocument.flags?.loadouts?.stack?.max > 0;
         this.diff = diff;
     };
 
@@ -129,6 +129,8 @@ export class LoadoutsItem extends LoadoutsObject {
         // Add stacked items to existing stacks, if possible
         if(this.isStack) {
             const [loadoutsTile, loadoutsStack] = this.findValidStack();
+            this.loadoutsTile = loadoutsTile;
+            this.loadoutsStack = loadoutsStack;
             if(loadoutsTile) {
                 if(await this.updateStack()) {
                     return;
@@ -203,6 +205,9 @@ export class LoadoutsItem extends LoadoutsObject {
             return;
         } else {
             this.removeLoadoutsItem(this.objectDocument);
+            if(this.removedItemToken.flags.loadouts.stack.members.length == 0){
+                this.removedItemToken.delete();
+            };
         };
     };
 };
