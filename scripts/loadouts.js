@@ -413,7 +413,9 @@ export class LoadoutsToken extends LoadoutsObject {
 
     removeLoadoutsToken() {
         this.tokenOwner = game.actors.get(this.objectDocument.flags.loadouts.owner);
-        this.objectDocument.delete();
+        // This seems to have been invalidated by changes to the code that supports the 5e quantity system. But everything seems to be working...
+        // TODO: Revisit
+        // this.objectDocument.delete();
         ui.notifications.info(`Loadouts: removed '${this.objectDocument.name}' from ${this.tokenOwner.name}'s loadout in '${this.objectDocument.parent.name}'`);
     };
 };
